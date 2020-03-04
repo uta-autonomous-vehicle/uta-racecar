@@ -8,7 +8,7 @@ from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 
 import actionlib    
 from utils.capture_vision_steering import Capture
-print "............"
+# print "............"
 def joy_callback(msg):
     # TODO: subscribed to /joy
     pass
@@ -70,7 +70,11 @@ def get_time_passed(started = None):
 #     # while not rospy.is_shutdown():
 #     #     rospy.spin()
 
+def package_init(message = ""):
+    print message
+
 if __name__ == "__main__":
+    package_init("uta-racecar started")
     rospy.init_node("uta_racecar")
 
     capture = Capture()
