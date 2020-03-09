@@ -8,6 +8,7 @@ from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 
 import actionlib    
 from utils.capture_vision_steering import Capture
+from drive import Drive
 # print "............"
 def joy_callback(msg):
     # TODO: subscribed to /joy
@@ -22,53 +23,55 @@ def get_time_passed(started = None):
     
     return time.time() - started
 
-# if __name__ == "__main__":
-#     print "starting uta-racecar node"
-#     rospy.init_node("uta-racecar")
+'''
+if __name__ == "__main__":
+    print "starting uta-racecar node"
+    rospy.init_node("uta-racecar")
     
-#     max_speed = rospy.get_param("~max_speed", 1)
-#     max_steering = rospy.get_param("~max_steering", 1.04)
-#     rospy.Subscriber('/joy', Joy, joy_callback)
+    max_speed = rospy.get_param("~max_speed", 1)
+    max_steering = rospy.get_param("~max_steering", 1.04)
+    rospy.Subscriber('/joy', Joy, joy_callback)
 
-#     ack_publisher = rospy.Publisher("/ackermann_cmd_mux/input/default", AckermannDriveStamped, queue_size=1)
+    ack_publisher = rospy.Publisher("/ackermann_cmd_mux/input/default", AckermannDriveStamped, queue_size=1)
 
-#     n = 0
+    n = 0
 
-#     started = time.time()
-#     # client = actionlib.SimpleActionClient('/ackermann_cmd_mux/input/default', AckermannDriveStamped)
+    started = time.time()
+    # client = actionlib.SimpleActionClient('/ackermann_cmd_mux/input/default', AckermannDriveStamped)
     
-#     while True:
-#         # print get_time_passed(started)
-#         if get_time_passed(started) > 5:
-#             break
+    while True:
+        # print get_time_passed(started)
+        if get_time_passed(started) > 5:
+            break
 
-#         ack_header = Header()
-#         # ack_header.seq = n
-#         ack_header.stamp.secs = get_time_passed()
-#         n += 1
+        ack_header = Header()
+        # ack_header.seq = n
+        ack_header.stamp.secs = get_time_passed()
+        n += 1
     
-#         ack_drive = AckermannDrive()
-#         # ack_drive.steering_angle = -0.5
-#         # ack_drive.steering_angle_velocity = 15.0
-#         ack_drive.speed = 0.4
-#         # ack_drive.acceleration = 10.0
-#         # ack_drive.serialize = 
+        ack_drive = AckermannDrive()
+        # ack_drive.steering_angle = -0.5
+        # ack_drive.steering_angle_velocity = 15.0
+        ack_drive.speed = 0.4
+        # ack_drive.acceleration = 10.0
+        # ack_drive.serialize = 
     
-#         sample_msg = AckermannDriveStamped()
-#         sample_msg.drive = ack_drive
-#         # sample_msg.header = ack_header
+        sample_msg = AckermannDriveStamped()
+        sample_msg.drive = ack_drive
+        # sample_msg.header = ack_header
         
-#         ack_publisher.publish(sample_msg)
+        ack_publisher.publish(sample_msg)
 
-#         # print(sample_msg)
-#         # break
-#         # time.sleep(0.2)
+        # print(sample_msg)
+        # break
+        # time.sleep(0.2)
 
-#         # client.send_goal(ack_drive)
+        # client.send_goal(ack_drive)
 
-#     print "exits"
-#     # while not rospy.is_shutdown():
-#     #     rospy.spin()
+    print "exits"
+    # while not rospy.is_shutdown():
+    #     rospy.spin()
+'''
 
 def package_init(message = ""):
     print message
@@ -77,8 +80,11 @@ if __name__ == "__main__":
     package_init("uta-racecar started")
     rospy.init_node("uta_racecar")
 
-    capture = Capture()
-    capture.listener()
+    # capture = Capture()
+    # capture.listener()
+
+    drive = Drive()
+    drive.test_steering()
     
-    while not rospy.is_shutdown():
-        rospy.spin()
+    # while not rospy.is_shutdown():
+    #     rospy.spin()

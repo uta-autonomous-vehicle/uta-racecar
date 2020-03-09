@@ -32,7 +32,7 @@ class Capture(BaseCapture):
         self.begin_date = datetime.strftime(datetime.now(), "uta_racecar_%Y-%m-%d.")
         self.begin_time = datetime.strftime(datetime.now(), "%H:%M:%S")
         
-        self.file_path = "/media/nvidia/samsung_ssd/data/2020/"
+        self.file_path = "/media/nvidia/data/2020/"
         self.file_path += self.begin_date + self.begin_time
         
         os.mkdir(self.file_path)
