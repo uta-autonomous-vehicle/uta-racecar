@@ -153,6 +153,7 @@ class Capture(BaseCapture):
     
     def on_shutdown(self):
         print "Node shutting down, saving data"
+        print "{} left and {} right images to {}".format(self.left_seq, self.right_seq, self.file_path)
 
         self.file_to_write_left.close()
         self.file_to_write_right.close()
