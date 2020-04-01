@@ -14,6 +14,10 @@ from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 import numpy as np
 
 from threading import Thread
+from Queue import Queue
+# import queue
+from multiprocessing import Value, Process
+from utils.cv_tools import CVTools, StraightLineOffsetDetector
 
 class Drive(object):
     def __init__(self):
@@ -25,8 +29,9 @@ class Drive(object):
         self.max_angle = 0.340000003576
 
         self.current_speed = 2.0
+        self.current_steering_angle = 0.0
 
-        self.acceleration = 0.5
+        self.acceleration = 1.0
         
         self.safe_front = True
         self.safe_left = True
@@ -41,15 +46,39 @@ class Drive(object):
             'steering_angle_velocity': 0.0,
         }
 
-        self.ack_publisher = rospy.Publisher("/ackermann_cmd_mux/input/default", AckermannDriveStamped, queue_size=1)
+        self.ack_publisher = rospy.Publisher("/ackermann_cmd_mux/input/navigation", AckermannDriveStamped, queue_size=5)
         self.thread_state = {}
+        
+        # self.current_steering_thread = Value('d', 0.0)
+        self.th = Thread(target = self.keep_going_straight)
+        self.must_stop = False
+        self.rate = rospy.Rate(500)
+
+        # self.th.join()
     
-    
-    def get_config(self, speed = 0.0, steering_angle = 0.0, acceleration = 0.0):
+    def safety_check(self):
+        return not self.must_stop
+
+    def initiate_threads(self):
+        self.th.start()
+
+    def keep_going_straight(self):
+        while self.safety_check() or not rospy.is_shutdown():
+            # steering_angle = q.get()
+            # if steering_angle:
+            #     config = self.get_config(self.current_speed, steering_angle)
+            # else:
+            config = self.get_config()
+            print "going straight with speed {} and angle {}".format(config.drive.speed, config.drive.steering_angle)
+            self.ack_publisher.publish(config)
+
+            # self.rate.sleep()
+
+    def get_config(self, speed = None, steering_angle = None, acceleration = None):
         # TODO: add a way to return congigurable config
 
         msg = AckermannDriveStamped()
-        msg.drive.steering_angle = steering_angle or 0.0
+        msg.drive.steering_angle = steering_angle or self.current_steering_angle
         msg.drive.acceleration = acceleration or 0.0
         msg.drive.speed = speed or self.current_speed
 
@@ -57,16 +86,20 @@ class Drive(object):
 
         # self.ack_publisher.publish(msg
 
-    def go_forward(self, secs = 0.0, dist = 0.0):
+    def go_forward(self, secs = 0.0, dist = 0.0, angle = 0.0):
         start = datetime.datetime.now()
         end = datetime.datetime.now()
 
         while (datetime.datetime.now() - start).seconds < secs:
-            print "going forward"
-            config = self.get_config(1.0)
+            self.current_speed = 2.0
+            # config = self.get_config(self.current_speed, angle)
 
-            self.ack_publisher.publish(config)
+            # self.ack_publisher.publish(config)
             end = datetime.datetime.now()
+            self.rate.sleep()
+        
+        self.current_speed = 0.0
+        # self.must_stop = True
         # TODO: add a way to keep moving forward for x seconds or x meters
     
     def go_back(self, secs = 0.0, dist = 0.0):
@@ -74,27 +107,35 @@ class Drive(object):
         end = datetime.datetime.now()
 
         while (datetime.datetime.now() - start).seconds < secs:
-            print "going forward"
-            config = self.get_config(-2.0)
+            self.current_speed = -2.0
+            # config = self.get_config(-2.0)
 
-            self.ack_publisher.publish(config)
+            # self.ack_publisher.publish(config)
             end = datetime.datetime.now()
         # TODO: add a way to keep moving forward for x seconds or x meters
+
+        self.current_speed = 0.0
 
     def make_turn(self, angle = 0.0):
         # TODO: add a way to turn at an angle and straighten up after that
 
-        print "making a turn at an angle ", angle
-        config = self.get_config(None, angle)
-        self.ack_publisher.publish(config)  
+        self.current_steering_angle = angle
+        return 
+
+        # print "making a turn at an angle ", angle
+        # config = self.get_config(None, angle)
+        # self.ack_publisher.publish(config)  
 
     def go_left(self, angle = 0.0):
         # TODO: add a way to make a 90 turn and straighten up
         start = datetime.datetime.now()
 
         while (datetime.datetime.now() - start).seconds < 3.4:
-            config = self.get_config(1.0, self.max_angle)
-            self.ack_publisher.publish(config)
+            self.current_speed = 2.0
+            self.current_steering_angle = self.max_angle
+            # config = self.get_config(1.0, self.max_angle)
+            # self.ack_publisher.publish(config)
+        self.current_speed = 0.0
 
         return
 
@@ -102,9 +143,13 @@ class Drive(object):
         # TODO: add a way to make a 90 turn and straighten up
         start = datetime.datetime.now()
 
-        while (datetime.datetime.now() - start).seconds < 3:
-            config = self.get_config(1.0, -1*self.max_angle)
-            self.ack_publisher.publish(config)
+        while (datetime.datetime.now() - start).seconds < 3.4:
+            self.current_speed = 2.0
+            self.current_steering_angle = - self.max_angle
+            # config = self.get_config(1.0, -1*self.max_angle)
+            # self.ack_publisher.publish(config)
+        self.current_speed = 0.0
+
         return
 
     

@@ -1,6 +1,7 @@
 import rospy
 import time
 import os
+import cv2
 from PIL import Image as Im
 from sensor_msgs.msg import Joy, Image
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
@@ -10,6 +11,10 @@ import cv2 as cv
 
 import message_filters
 import pdb
+
+from drive import Drive
+from path_sense.utils.cv_tools import CVTools, StraightLineOffsetDetector
+from path_sense.utils.logger import logger
 
 now = datetime.strftime(datetime.now(), "uta_racecar_%Y-%m-%d-%H:%M:%s")
 PATH_TO_SAVE = "/media/nvidia/samsung_ssd/data/2020/{}".format(now)
@@ -29,6 +34,10 @@ class Capture(BaseCapture):
         self.left_seq = 0
         self.right_seq = 0
         self.seq = 0
+        self.drive = Drive()
+        return
+
+    def initiate_setup(self):
 
         self.begin_date = datetime.strftime(datetime.now(), "uta_racecar_%Y-%m-%d.")
         self.begin_time = datetime.strftime(datetime.now(), "%H:%M:%S")
@@ -47,19 +56,24 @@ class Capture(BaseCapture):
         self.file_to_write_left = open(self.file_path + "/left_camera.txt", 'a')
         self.file_to_write_right = open(self.file_path + "/right_camera.txt", 'a')
 
+
     def save_file(self, image, file_path_with_name):
         open(file_path_with_name, "w").close()
 
         if SAVE_DATA:
             image.save(file_path_with_name)
     
-    def read_image(self, data):
+    def read_image(self, data, format = 'RGB'):
         # data type: string
         image = Im.frombytes("RGB", (1280, 720), data)
         (r,g,b) = image.split()
 
-        image = Im.merge("RGB", (b,g,r))
-        return image
+        if format == 'RGB':
+            return Im.merge("RGB", (b,g,r))
+        else:
+            return image
+
+        # return image
     
     def flush_image_cache(self):
         for i in image_cache:
@@ -116,6 +130,21 @@ class Capture(BaseCapture):
                 file_to_write.write("\n")
                 file_to_write.close()
 
+    def turn_off_drive(self):
+        self.drive.must_stop = True
+
+    def drive_autonomous(self, data):
+        image = Im.frombytes("RGB", (1280, 720), data.data)
+        image = np.array(image)
+        
+        steering_angle = StraightLineOffsetDetector(image).get_steering_angle()
+        logger.info("steering angle %s", steering_angle)
+
+        self.seq += 1
+
+        if -0.34 < steering_angle and steering_angle < 0.34:
+            self.drive.make_turn(steering_angle)
+
     def sync_camera_steering(self, camera_left, camera_right, steering):
         self.left_camera(camera_left, self.file_to_write_left)
         self.right_camera(camera_right, self.file_to_write_right)
@@ -161,7 +190,13 @@ class Capture(BaseCapture):
         # self.convert_images_to_video_seq()
 
 
-    def listener(self):
+    def activate_listener_for_autonomy(self):
+        rospy.Subscriber("/zed/right/image_rect_color", Image, self.drive_autonomous)
+        rospy.on_shutdown(self.turn_off_drive)
+        
+        self.drive.initiate_threads()
+
+    def activate_listener_for_saving_data(self):
         # rospy.Subscriber("/zed/left/image_rect_color", Image, self.left_camera)
         # rospy.Subscriber("/zed/right/image_rect_color", Image, right_camera)
         
@@ -171,6 +206,7 @@ class Capture(BaseCapture):
 
         ts = message_filters.ApproximateTimeSynchronizer([camera_sub_left, camera_sub_right, angle_sub], 10, 0.5, allow_headerless = True)
         ts.registerCallback(self.sync_camera_steering)
+
 
         rospy.on_shutdown(self.on_shutdown)
 
