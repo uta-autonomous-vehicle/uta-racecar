@@ -114,6 +114,8 @@ class Drive(object):
 
             self.current_speed = 0.0
 
+        self.current_speed = 0.0
+
     def make_turn(self, angle = 0.0):
         # TODO: add a way to turn at an angle and straighten up after that
 
