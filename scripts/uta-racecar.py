@@ -26,7 +26,6 @@ def get_time_passed(started = None):
 def package_init(message = ""):
     print message
 
-
 if __name__ == "__main__":
     package_init("uta-racecar started")
     rospy.init_node("uta_racecar")

@@ -1,5 +1,6 @@
 <!-- -*- mode: XML -*- -->
 <launch>
   <node pkg="uta-racecar" type="uta-racecar.py" name="uta_racecar" />
+  <node pkg="uta-racecar" type="node_recorder.py" name="node_recorder" />
   <!-- <param name="" value=""/> -->
 </launch>

@@ -34,8 +34,7 @@ class DriveManager(object):
 
 class Drive(DriveManager):
     def __init__(self):
-        super().__init__()
-
+        DriveManager.__init__(self)
         self.started = datetime.datetime.now()
 
         self.max_speed = 2.0
@@ -158,7 +157,7 @@ class Drive(DriveManager):
 
 class DriveTest(Drive):
     def __init__(self):
-        super().__init__()
+        Drive.__init__(self)
         
     def test_steering(self):
         rate = rospy.Rate(10)

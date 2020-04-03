@@ -32,7 +32,7 @@ class BaseCapture(object):
 
 class Capture(BaseCapture):
     def __init__(self):
-        super().__init__()
+        BaseCapture.__init__(self)
         self.left_seq = 0
         self.right_seq = 0
         self.seq = 0
@@ -57,6 +57,10 @@ class Capture(BaseCapture):
 
         self.file_to_write_left = open(self.file_path + "/left_camera.txt", 'a')
         self.file_to_write_right = open(self.file_path + "/right_camera.txt", 'a')
+
+        fourcc = cv.VideoWriter_fourcc(*'mp4v')
+        self.left_camera_video = cv.VideoWriter(self.file_path + '/left_camera.mp4', fourcc, 30.0, (1280,720))
+        self.right_camera_video = cv.VideoWriter(self.file_path + '/right_camera.mp4', fourcc, 30.0, (1280,720))
 
 
     def save_file(self, image, file_path_with_name):
@@ -87,13 +91,17 @@ class Capture(BaseCapture):
         steering_angle_text = "Angle: {}".format(steering_angle)
         if data.data:
             image = self.read_image(data.data)
-            
-            image_tool = CVTools(image).add_text_to_image(steering_angle_text, (100, 100))
+            image = np.asarray(image)
+
+            image_tool = CVTools(image)
+            image_tool.add_text_to_image(steering_angle_text, (100, 100))
             image = image_tool.image
-            # im = np.fromstring(data.data)
-            # im = im.reshape((720, 480))
-            # print(im.shape)
-            self.save_file(image, self.file_path + "/left_camera/{}.jpg".format(self.left_seq))
+            self.left_camera_video.write(image)
+
+            logger.info("saving frame {}".format(self.left_seq))
+
+            # image = Im.fromarray(image)
+            # self.save_file(image, self.file_path + "/left_camera/{}.jpg".format(self.left_seq))
 
         file_to_write = file_to_write or open(self.file_path + "/left_camera.txt", 'a')
         file_to_write.write("{}.jpg ".format(self.left_seq))
@@ -110,11 +118,17 @@ class Capture(BaseCapture):
         steering_angle_text = "Angle: {}".format(steering_angle)
         if data.data:
             image = self.read_image(data.data)
+            image = np.asarray(image)
 
-            image_tool = CVTools(image).add_text_to_image(steering_angle_text, (100, 100))
+            image_tool = CVTools(image)
+            image_tool.add_text_to_image(steering_angle_text, (100, 100))
             image = image_tool.image
+            self.right_camera_video.write(image)
 
-            self.save_file(image, self.file_path + "/right_camera/{}.jpg".format(self.right_seq))
+            logger.info("saving frame {}".format(self.right_seq))
+            
+            # image = Im.fromarray(image)
+            # self.save_file(image, self.file_path + "/right_camera/{}.jpg".format(self.right_seq))
 
         file_to_write = file_to_write or open(self.file_path + "/right_camera.txt", 'a')
         file_to_write.write("{}.jpg ".format(self.right_seq))
@@ -141,8 +155,8 @@ class Capture(BaseCapture):
                 file_to_write.close()
 
     def sync_camera_steering(self, camera_left, camera_right, steering):
-        self.left_camera_input(camera_left, steering.data.drive.steering_angle, self.file_to_write_left)
-        self.right_camera_input(camera_right, steering.data.drive.steering_angle, self.file_to_write_right)
+        self.left_camera_input(camera_left, steering.drive.steering_angle, self.file_to_write_left)
+        self.right_camera_input(camera_right, steering.drive.steering_angle, self.file_to_write_right)
 
         self.ackermann_input(steering, self.file_to_write_left)
         self.ackermann_input(steering, self.file_to_write_right)
@@ -154,33 +168,15 @@ class Capture(BaseCapture):
 
         print "main seq {}".format(self.seq)
     
-    def convert_images_to_video_seq(self):
-        fourcc = cv.VideoWriter_fourcc(*'mp4v')
-        left_camera_video = cv.VideoWriter(self.file_path + '/left_camera.mp4', fourcc, 1,(1280,720))
-        right_camera_video = cv.VideoWriter(self.file_path + '/right_camera.mp4', fourcc, 1,(1280,720))
-
-        for i in range(self.left_seq):
-            path_name = self.file_path + '/left_camera/{}.jpg'.format(i)
-            if os.path.exists(os.path.abspath(path_name)):
-                print path_name," exists"
-                left_camera_video.write(cv.imread(path_name))
-            else:
-                print path_name," does not exists"
-
-            path_name = self.file_path + '/right_camera/{}.jpg'.format(i)
-            if os.path.exists(os.path.abspath(path_name)):
-                right_camera_video.write(cv.imread(path_name))
-
-
-        left_camera_video.release()
-        right_camera_video.release()
-    
     def shutdown_logged_files(self):
         print "Node shutting down, saving data"
         print "{} left and {} right images to {}".format(self.left_seq, self.right_seq, self.file_path)
 
         self.file_to_write_left.close()
         self.file_to_write_right.close()
+
+        self.left_camera_video.release()
+        self.right_camera_video.release()
 
         # self.convert_images_to_video_seq()
 
@@ -190,11 +186,10 @@ class Capture(BaseCapture):
         
         camera_sub_left = message_filters.Subscriber("/zed/left/image_rect_color", Image)
         camera_sub_right = message_filters.Subscriber("/zed/right/image_rect_color", Image)
-        angle_sub = message_filters.Subscriber("/ackermann_cmd_mux/input/navigation", AckermannDriveStamped)
+        angle_sub = message_filters.Subscriber("/ackermann_cmd_mux/output", AckermannDriveStamped)
 
-        ts = message_filters.ApproximateTimeSynchronizer([camera_sub_left, camera_sub_right, angle_sub], 10, 0.5, allow_headerless = True)
+        ts = message_filters.ApproximateTimeSynchronizer([camera_sub_left, camera_sub_right, angle_sub], 1, 0.1, allow_headerless = True)
         ts.registerCallback(self.sync_camera_steering)
-
 
         rospy.on_shutdown(self.shutdown_logged_files)
 
@@ -203,7 +198,7 @@ class Capture(BaseCapture):
 
 class AutoDriver(Capture):
     def __init__(self):
-        super().__init__()
+        Capture.__init__(self)
 
     def callback_for_autonomy(self, data):
         image = Im.frombytes("RGB", (1280, 720), data.data)
@@ -217,6 +212,9 @@ class AutoDriver(Capture):
         if -0.34 < steering_angle and steering_angle < 0.34:
             self.drive.make_turn(steering_angle)
         
+    def disable_drive(self):
+        self.drive.destroy_threads()
+
     def register_callback_for_autonomy(self):
         rospy.Subscriber("/zed/right/image_rect_color", Image, self.callback_for_autonomy)
         rospy.on_shutdown(self.disable_drive)
@@ -224,10 +222,6 @@ class AutoDriver(Capture):
         self.drive.initiate_threads()
         return
     
-    def disable_drive(self):
-        self.drive.destroy_threads()
-    
     def drive_and_save_data(self):
-        self.initiate_setup_to_record_vision()
-        self.register_callbacks_for_saving_data()
         self.register_callback_for_autonomy()
+        return
