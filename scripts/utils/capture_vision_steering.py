@@ -27,20 +27,22 @@ right_seq = 0
 
 class BaseCapture(object):
     def __init__(self):
+        self.drive = Drive()
         pass
 
 class Capture(BaseCapture):
     def __init__(self):
+        super().__init__()
         self.left_seq = 0
         self.right_seq = 0
         self.seq = 0
-        self.drive = Drive()
+
         return
 
-    def initiate_setup(self):
+    def initiate_setup_to_record_vision(self):
 
-        self.begin_date = datetime.strftime(datetime.now(), "uta_racecar_%Y-%m-%d.")
-        self.begin_time = datetime.strftime(datetime.now(), "%H:%M:%S")
+        self.begin_date = datetime.strftime(datetime.now(), "UTARACECAR_%Y%m%d.")
+        self.begin_time = datetime.strftime(datetime.now(), "%H%M%S")
         
         self.file_path = "/media/nvidia/data/2020/"
         self.file_path += self.begin_date + self.begin_time
@@ -64,7 +66,7 @@ class Capture(BaseCapture):
             image.save(file_path_with_name)
     
     def read_image(self, data, format = 'RGB'):
-        # data type: string
+        # NOTE: streamed data from ZED is in BGR format
         image = Im.frombytes("RGB", (1280, 720), data)
         (r,g,b) = image.split()
 
@@ -81,9 +83,13 @@ class Capture(BaseCapture):
 
         return
         
-    def left_camera(self, data, file_to_write = None, using_standalone = False):
+    def left_camera_input(self, data, steering_angle, file_to_write = None, using_standalone = False):
+        steering_angle_text = "Angle: {}".format(steering_angle)
         if data.data:
             image = self.read_image(data.data)
+            
+            image_tool = CVTools(image).add_text_to_image(steering_angle_text, (100, 100))
+            image = image_tool.image
             # im = np.fromstring(data.data)
             # im = im.reshape((720, 480))
             # print(im.shape)
@@ -100,9 +106,13 @@ class Capture(BaseCapture):
         self.left_seq += 1
         return None
 
-    def right_camera(self, data, file_to_write = None, using_standalone = False):
+    def right_camera_input(self, data, steering_angle, file_to_write = None, using_standalone = False):
+        steering_angle_text = "Angle: {}".format(steering_angle)
         if data.data:
             image = self.read_image(data.data)
+
+            image_tool = CVTools(image).add_text_to_image(steering_angle_text, (100, 100))
+            image = image_tool.image
 
             self.save_file(image, self.file_path + "/right_camera/{}.jpg".format(self.right_seq))
 
@@ -130,24 +140,9 @@ class Capture(BaseCapture):
                 file_to_write.write("\n")
                 file_to_write.close()
 
-    def turn_off_drive(self):
-        self.drive.must_stop = True
-
-    def drive_autonomous(self, data):
-        image = Im.frombytes("RGB", (1280, 720), data.data)
-        image = np.array(image)
-        
-        steering_angle = StraightLineOffsetDetector(image).get_steering_angle()
-        logger.info("steering angle %s", steering_angle)
-
-        self.seq += 1
-
-        if -0.34 < steering_angle and steering_angle < 0.34:
-            self.drive.make_turn(steering_angle)
-
     def sync_camera_steering(self, camera_left, camera_right, steering):
-        self.left_camera(camera_left, self.file_to_write_left)
-        self.right_camera(camera_right, self.file_to_write_right)
+        self.left_camera_input(camera_left, steering.data.drive.steering_angle, self.file_to_write_left)
+        self.right_camera_input(camera_right, steering.data.drive.steering_angle, self.file_to_write_right)
 
         self.ackermann_input(steering, self.file_to_write_left)
         self.ackermann_input(steering, self.file_to_write_right)
@@ -180,7 +175,7 @@ class Capture(BaseCapture):
         left_camera_video.release()
         right_camera_video.release()
     
-    def on_shutdown(self):
+    def shutdown_logged_files(self):
         print "Node shutting down, saving data"
         print "{} left and {} right images to {}".format(self.left_seq, self.right_seq, self.file_path)
 
@@ -189,27 +184,50 @@ class Capture(BaseCapture):
 
         # self.convert_images_to_video_seq()
 
-
-    def activate_listener_for_autonomy(self):
-        rospy.Subscriber("/zed/right/image_rect_color", Image, self.drive_autonomous)
-        rospy.on_shutdown(self.turn_off_drive)
-        
-        self.drive.initiate_threads()
-
-    def activate_listener_for_saving_data(self):
+    def register_callbacks_for_saving_data(self):
         # rospy.Subscriber("/zed/left/image_rect_color", Image, self.left_camera)
         # rospy.Subscriber("/zed/right/image_rect_color", Image, right_camera)
         
         camera_sub_left = message_filters.Subscriber("/zed/left/image_rect_color", Image)
         camera_sub_right = message_filters.Subscriber("/zed/right/image_rect_color", Image)
-        angle_sub = message_filters.Subscriber("/ackermann_cmd_mux/input/teleop", AckermannDriveStamped)
+        angle_sub = message_filters.Subscriber("/ackermann_cmd_mux/input/navigation", AckermannDriveStamped)
 
         ts = message_filters.ApproximateTimeSynchronizer([camera_sub_left, camera_sub_right, angle_sub], 10, 0.5, allow_headerless = True)
         ts.registerCallback(self.sync_camera_steering)
 
 
-        rospy.on_shutdown(self.on_shutdown)
+        rospy.on_shutdown(self.shutdown_logged_files)
 
-        print "registered callbacks"
+        print "registered callbacks for left, right, drive"
         
+
+class AutoDriver(Capture):
+    def __init__(self):
+        super().__init__()
+
+    def callback_for_autonomy(self, data):
+        image = Im.frombytes("RGB", (1280, 720), data.data)
+        image = np.array(image)
+        
+        steering_angle = StraightLineOffsetDetector(image).get_steering_angle()
+        logger.info("steering angle %s", steering_angle)
+
+        self.seq += 1
+
+        if -0.34 < steering_angle and steering_angle < 0.34:
+            self.drive.make_turn(steering_angle)
+        
+    def register_callback_for_autonomy(self):
+        rospy.Subscriber("/zed/right/image_rect_color", Image, self.callback_for_autonomy)
+        rospy.on_shutdown(self.disable_drive)
+        
+        self.drive.initiate_threads()
         return
+    
+    def disable_drive(self):
+        self.drive.destroy_threads()
+    
+    def drive_and_save_data(self):
+        self.initiate_setup_to_record_vision()
+        self.register_callbacks_for_saving_data()
+        self.register_callback_for_autonomy()

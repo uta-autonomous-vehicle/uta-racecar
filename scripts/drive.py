@@ -19,8 +19,23 @@ from Queue import Queue
 from multiprocessing import Value, Process
 from utils.cv_tools import CVTools, StraightLineOffsetDetector
 
-class Drive(object):
+class DriveManager(object):
     def __init__(self):
+        self.safety_stop_force = False
+        self.safety_stop_no_path = False
+
+        self.th = Thread(target = self.keep_going_straight)
+
+    def initiate_threads(self):
+        self.th.start()
+    
+    def destroy_threads(self):
+        self.safety_stop_force = True
+
+class Drive(DriveManager):
+    def __init__(self):
+        super().__init__()
+
         self.started = datetime.datetime.now()
 
         self.max_speed = 2.0
@@ -50,17 +65,12 @@ class Drive(object):
         self.thread_state = {}
         
         # self.current_steering_thread = Value('d', 0.0)
-        self.th = Thread(target = self.keep_going_straight)
-        self.must_stop = False
+
         self.rate = rospy.Rate(500)
 
-        # self.th.join()
     
     def safety_check(self):
-        return not self.must_stop
-
-    def initiate_threads(self):
-        self.th.start()
+        return not self.safety_stop_force
 
     def keep_going_straight(self):
         while self.safety_check() or not rospy.is_shutdown():
@@ -146,7 +156,10 @@ class Drive(object):
 
         return
 
-    
+class DriveTest(Drive):
+    def __init__(self):
+        super().__init__()
+        
     def test_steering(self):
         rate = rospy.Rate(10)
         self.current_speed = 0.0

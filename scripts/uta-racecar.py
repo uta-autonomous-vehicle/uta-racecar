@@ -7,8 +7,8 @@ from std_msgs.msg import Header
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 
 import actionlib    
-from utils.capture_vision_steering import Capture
-from drive import Drive
+from utils.capture_vision_steering import Capture, AutoDriver
+from drive import Drive, DriveTest
 
 # print "............"
 def joy_callback(msg):
@@ -31,13 +31,15 @@ if __name__ == "__main__":
     package_init("uta-racecar started")
     rospy.init_node("uta_racecar")
 
-    capture = Capture()
-    # capture.initiate_setup()
-    # capture.activate_listener_for_saving_data()
-    capture.activate_listener_for_autonomy()
+    driver = AutoDriver()
+    driver.drive_and_save_data()
+    
+    # driver.initiate_setup_to_record_vision()
+    # driver.register_callbacks_for_saving_data()
+    # driver.register_callback_for_autonomy()
 
-    # drive = Drive()
-    # drive.test_steering()
+    # drive_test = DriveTest()
+    # drive_test.test_steering()
 
     # drive = Drive() 
     # drive.initiate_threads()
