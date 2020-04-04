@@ -23,6 +23,7 @@ class RosNode:
 
 
 if __name__ == "__main__":
+    return
     ros_node = RosNode()
     ros_node.initiate_recording()
 

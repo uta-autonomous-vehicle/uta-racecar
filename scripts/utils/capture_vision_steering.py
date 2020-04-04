@@ -1,4 +1,5 @@
 import rospy
+import math
 import time
 import os
 import cv2
@@ -27,7 +28,6 @@ right_seq = 0
 
 class BaseCapture(object):
     def __init__(self):
-        self.drive = Drive()
         pass
 
 class Capture(BaseCapture):
@@ -54,9 +54,11 @@ class Capture(BaseCapture):
 
         open(self.file_path + "/left_camera.txt", "w").close()
         open(self.file_path + "/right_camera.txt", "w").close()
+        open(self.file_path + "/drive_autonomous.txt", "w").close()
 
         self.file_to_write_left = open(self.file_path + "/left_camera.txt", 'a')
         self.file_to_write_right = open(self.file_path + "/right_camera.txt", 'a')
+        self.file_to_write_autonomous = open(self.file_path + "/drive_autonomous.txt", 'a')
 
         fourcc = cv.VideoWriter_fourcc(*'mp4v')
         self.left_camera_video = cv.VideoWriter(self.file_path + '/left_camera.mp4', fourcc, 30.0, (1280,720))
@@ -170,10 +172,11 @@ class Capture(BaseCapture):
     
     def shutdown_logged_files(self):
         print "Node shutting down, saving data"
-        print "{} left and {} right images to {}".format(self.left_seq, self.right_seq, self.file_path)
+        # print "{} left and {} right images to {}".format(self.left_seq, self.right_seq, self.file_path)
 
         self.file_to_write_left.close()
         self.file_to_write_right.close()
+        self.file_to_write_autonomous.close()
 
         self.left_camera_video.release()
         self.right_camera_video.release()
@@ -196,9 +199,18 @@ class Capture(BaseCapture):
         print "registered callbacks for left, right, drive"
         
 
-class AutoDriver(Capture):
+class AutoDriver(object):
     def __init__(self):
-        Capture.__init__(self)
+        self.drive = Drive()
+        self.capture = Capture()
+        self.save_data = False
+        self.seq = 0
+    
+    def get_seq(self):
+        return self.seq
+
+    def increment_seq(self):
+        self.seq += 1
 
     def callback_for_autonomy(self, data):
         image = Im.frombytes("RGB", (1280, 720), data.data)
@@ -207,13 +219,32 @@ class AutoDriver(Capture):
         steering_angle = StraightLineOffsetDetector(image).get_steering_angle()
         logger.info("steering angle %s", steering_angle)
 
-        self.seq += 1
-
         if -0.34 < steering_angle and steering_angle < 0.34:
+            # NOTE: TO PREVENT UNDER STEERING
+            # if math.fabs(steering_angle) <= 0.1:
+            #     self.drive.current_speed = 1.0
+            # else:
+            #     self.drive.current_speed = 0.5
+
             self.drive.make_turn(steering_angle)
+            
+            if self.save_data:
+                steering_angle_text = "Angle: {}".format(steering_angle)
+                image_tool = CVTools(image)
+                image_tool.add_text_to_image(steering_angle_text, (100, 100))
+                image = image_tool.image
+                # self.capture.right_camera_video.write(image)
+                # self.capture.save_file(Im.fromarray(image), self.capture.file_path + "/right_camera/{}.jpg".format(self.get_seq()))
+                self.capture.file_to_write_autonomous.write("{} {}\n".format(self.get_seq(), steering_angle))
+        
+        self.increment_seq()
+
         
     def disable_drive(self):
         self.drive.destroy_threads()
+
+        if self.save_data:
+            self.capture.shutdown_logged_files()
 
     def register_callback_for_autonomy(self):
         rospy.Subscriber("/zed/right/image_rect_color", Image, self.callback_for_autonomy)
@@ -223,5 +254,12 @@ class AutoDriver(Capture):
         return
     
     def drive_and_save_data(self):
+        self.register_callback_for_autonomy()
+        self.save_data = True
+        self.drive.current_speed = 0.5
+        self.capture.initiate_setup_to_record_vision()
+        return
+    
+    def drive_autonomous(self):
         self.register_callback_for_autonomy()
         return

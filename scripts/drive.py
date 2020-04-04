@@ -37,12 +37,12 @@ class Drive(DriveManager):
         DriveManager.__init__(self)
         self.started = datetime.datetime.now()
 
-        self.max_speed = 2.0
+        self.max_speed = 1.0
         self.min_speed = 0.2
 
         self.max_angle = 0.340000003576
 
-        self.current_speed = 2.0
+        self.current_speed = 1.0
         self.current_steering_angle = 0.0
 
         self.acceleration = 1.0
@@ -89,7 +89,7 @@ class Drive(DriveManager):
         msg = AckermannDriveStamped()
         msg.drive.steering_angle = steering_angle or self.current_steering_angle
         msg.drive.acceleration = acceleration or 0.0
-        msg.drive.speed = speed or self.current_speed
+        msg.drive.speed = speed or min(self.current_speed, self.max_speed)
 
         return msg
 
@@ -100,7 +100,7 @@ class Drive(DriveManager):
         end = datetime.datetime.now()
 
         while (datetime.datetime.now() - start).seconds < secs:
-            self.current_speed = 2.0
+            self.current_speed = self.max_speed
             # config = self.get_config(self.current_speed, angle)
 
             # self.ack_publisher.publish(config)
