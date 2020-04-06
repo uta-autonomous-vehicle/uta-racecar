@@ -200,11 +200,13 @@ class Capture(BaseCapture):
         
 
 class AutoDriver(object):
-    def __init__(self):
+    def __init__(self, use_left_camera = False):
         self.drive = Drive()
         self.capture = Capture()
         self.save_data = False
         self.seq = 0
+
+        self.use_left_camera = use_left_camera
     
     def get_seq(self):
         return self.seq
@@ -216,7 +218,11 @@ class AutoDriver(object):
         image = Im.frombytes("RGB", (1280, 720), data.data)
         image = np.array(image)
         
-        steering_angle = StraightLineOffsetDetector(image).get_steering_angle()
+        center_offset = -100
+        if self.use_left_camera:
+            center_offset = 100
+        
+        steering_angle = StraightLineOffsetDetector(image).get_steering_angle(center_offset)
         logger.info("steering angle %s", steering_angle)
 
         if -0.34 < steering_angle and steering_angle < 0.34:
@@ -233,8 +239,13 @@ class AutoDriver(object):
                 image_tool = CVTools(image)
                 image_tool.add_text_to_image(steering_angle_text, (100, 100))
                 image = image_tool.image
-                # self.capture.right_camera_video.write(image)
-                # self.capture.save_file(Im.fromarray(image), self.capture.file_path + "/right_camera/{}.jpg".format(self.get_seq()))
+                if self.use_left_camera:
+                    # self.capture.left_camera_video.write(image)
+                    self.capture.save_file(Im.fromarray(image), self.capture.file_path + "/left_camera/{}.jpg".format(self.get_seq()))
+                else:
+                    # self.capture.right_camera_video.write(image)
+                    self.capture.save_file(Im.fromarray(image), self.capture.file_path + "/right_camera/{}.jpg".format(self.get_seq()))
+
                 self.capture.file_to_write_autonomous.write("{} {}\n".format(self.get_seq(), steering_angle))
         
         self.increment_seq()
@@ -247,7 +258,11 @@ class AutoDriver(object):
             self.capture.shutdown_logged_files()
 
     def register_callback_for_autonomy(self):
-        rospy.Subscriber("/zed/right/image_rect_color", Image, self.callback_for_autonomy)
+        if self.use_left_camera:
+            node_to_listen = '/zed/left/image_rect_color'
+        else:
+            node_to_listen = '/zed/right/image_rect_color'
+        rospy.Subscriber(node_to_listen, Image, self.callback_for_autonomy)
         rospy.on_shutdown(self.disable_drive)
         
         self.drive.initiate_threads()
@@ -256,7 +271,7 @@ class AutoDriver(object):
     def drive_and_save_data(self):
         self.register_callback_for_autonomy()
         self.save_data = True
-        self.drive.current_speed = 0.5
+        # self.drive.current_speed = 0.5
         self.capture.initiate_setup_to_record_vision()
         return
     
