@@ -23,6 +23,7 @@ class DriveManager(object):
     def __init__(self):
         self.safety_stop_force = False
         self.safety_stop_no_path = False
+        self.safety_must_stop_for_blocking_object = False
 
         self.th = Thread(target = self.keep_going_straight)
 
@@ -77,6 +78,9 @@ class Drive(DriveManager):
             # if steering_angle:
             #     config = self.get_config(self.current_speed, steering_angle)
             # else:
+            if self.safety_must_stop_for_blocking_object:
+                continue
+            
             config = self.get_config()
             print "going straight with speed {} and angle {}".format(config.drive.speed, config.drive.steering_angle)
             self.ack_publisher.publish(config)
