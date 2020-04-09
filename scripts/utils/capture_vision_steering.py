@@ -227,6 +227,7 @@ class AutoDriver(object):
         logger.info("steering angle %s", steering_angle)
 
         if -0.34 < steering_angle and steering_angle < 0.34:
+            self.drive.safety_must_stop_for_blocking_object = False
             # NOTE: TO PREVENT UNDER STEERING
             # if math.fabs(steering_angle) <= 0.1:
             #     self.drive.current_speed = 1.0
@@ -251,6 +252,8 @@ class AutoDriver(object):
                     self.capture.save_file(Im.fromarray(image), self.capture.file_path + "/right_camera/{}.jpg".format(self.get_seq()))
 
                 self.capture.file_to_write_autonomous.write("{} {}\n".format(self.get_seq(), steering_angle))
+        elif steering_angle == -1:
+            self.drive.safety_must_stop_for_blocking_object = True
         
         self.increment_seq()
 
