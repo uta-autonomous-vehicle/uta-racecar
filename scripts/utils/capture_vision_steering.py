@@ -73,6 +73,7 @@ class Capture(BaseCapture):
     
     def read_image(self, data, format = 'RGB'):
         # NOTE: streamed data from ZED is in BGR format
+        # NOTE: returns a PIL image
         image = Im.frombytes("RGB", (1280, 720), data)
         (r,g,b) = image.split()
 
@@ -235,6 +236,9 @@ class AutoDriver(object):
             self.drive.make_turn(steering_angle)
             
             if self.save_data:
+                image = self.capture.read_image(data.data)
+                image = np.array(image)
+
                 steering_angle_text = "Angle: {}".format(steering_angle)
                 image_tool = CVTools(image)
                 image_tool.add_text_to_image(steering_angle_text, (100, 100))

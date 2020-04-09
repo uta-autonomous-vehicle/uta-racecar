@@ -30,7 +30,7 @@ if __name__ == "__main__":
     package_init("uta-racecar started")
     rospy.init_node("uta_racecar")
 
-    driver = AutoDriver(True)
+``    driver = AutoDriver(use_left_camera = False)
     # driver.drive_autonomous()
     driver.drive_and_save_data()
     
