@@ -24,11 +24,21 @@ class DriveManager(object):
         self.safety_stop_force = False
         self.safety_stop_no_path = False
         self.safety_must_stop_for_blocking_object = False
+        self.safety_driving_around_object = False
 
         self.th = Thread(target = self.keep_going_straight)
 
     def initiate_threads(self):
         self.th.start()
+    
+    def is_driving_around_object(self):
+        return self.safety_driving_around_object
+    
+    def set_driving_around_object(self):
+        self.safety_driving_around_object = True
+    
+    def reset_driving_around_object(self):
+        self.safety_driving_around_object = False
     
     def destroy_threads(self):
         self.safety_stop_force = True
@@ -83,6 +93,8 @@ class Drive(DriveManager):
             
             config = self.get_config()
             print "going straight with speed {} and angle {}".format(config.drive.speed, config.drive.steering_angle)
+            if self.is_driving_around_object():
+                print "driving around object"
             self.ack_publisher.publish(config)
 
             # self.rate.sleep()
@@ -125,9 +137,7 @@ class Drive(DriveManager):
                 end = datetime.datetime.now()
             # TODO: add a way to keep moving forward for x seconds or x meters
 
-            self.current_speed = 0.0
-
-        self.current_speed = 0.0
+            self.current_speed = 1.0
 
     def make_turn(self, angle = 0.0):
         # TODO: add a way to turn at an angle and straighten up after that
@@ -151,11 +161,26 @@ class Drive(DriveManager):
         # TODO: add a way to make a 90 turn and straighten up
         start = datetime.datetime.now()
 
-        while (datetime.datetime.now() - start).seconds < 3.4:
+        while (datetime.datetime.now() - start).seconds < 2:
             self.current_speed = 2.0
             self.current_steering_angle = - self.max_angle
             
         self.current_speed = 0.0
+
+        return
+    
+    def go_right_circle(self, angle = 0.0):
+        # TODO: add a way to make a 90 turn and straighten up
+        start = datetime.datetime.now()
+
+        while (datetime.datetime.now() - start).seconds <= 1:
+            self.current_speed = 1.0
+            self.current_steering_angle = - self.max_angle
+
+            time.sleep(0.1)
+        
+        self.current_steering_angle = 0.0
+        # self.current_speed = 0.0
 
         return
 

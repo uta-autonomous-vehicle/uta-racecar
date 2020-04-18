@@ -1,6 +1,7 @@
 import rospy
 import math
 import time
+from datetime import datetime
 import os
 import cv2
 from PIL import Image as Im
@@ -216,15 +217,31 @@ class AutoDriver(object):
         self.seq += 1
 
     def callback_for_autonomy(self, data):
+        if self.drive.is_driving_around_object():
+            return
+
         image = Im.frombytes("RGB", (1280, 720), data.data)
         image = np.array(image)
         
-        center_offset = -100
+        center_offset = -120
         if self.use_left_camera:
-            center_offset = 100
+            center_offset = 120
         
-        steering_angle = StraightLineOffsetDetector(image).get_steering_angle(center_offset)
+        offset_detector = StraightLineOffsetDetector(image)
+        offset_detector.filter_color()
+        steering_angle = offset_detector.get_steering_angle(center_offset)
         logger.info("steering angle %s", steering_angle)
+
+        offset_detector = StraightLineOffsetDetector(image)
+        offset_detector.filter_color("pink")
+        steering_angle_stop = offset_detector.get_steering_angle(center_offset)
+        logger.info("steering angle %s", steering_angle)
+
+        # if steering_angle_stop != -1:
+        #     # _start = date
+        #     self.drive.set_driving_around_object()
+        #     self.drive.go_right_circle()
+        #     self.drive.reset_driving_around_object()
 
         if -0.34 < steering_angle and steering_angle < 0.34:
             self.drive.safety_must_stop_for_blocking_object = False
@@ -253,6 +270,7 @@ class AutoDriver(object):
 
                 self.capture.file_to_write_autonomous.write("{} {}\n".format(self.get_seq(), steering_angle))
         elif steering_angle == -1:
+            pass
             self.drive.safety_must_stop_for_blocking_object = True
         
         self.increment_seq()
