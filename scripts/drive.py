@@ -18,30 +18,34 @@ from Queue import Queue
 # import queue
 from multiprocessing import Value, Process
 from utils.cv_tools import CVTools, StraightLineOffsetDetector
+from path_sense.utils.logger import logger
 
 class DriveManager(object):
     def __init__(self):
         self.safety_stop_force = False
         self.safety_stop_no_path = False
         self.safety_must_stop_for_blocking_object = False
-        self.safety_driving_around_object = False
+        self.safety_driving_around_object_or_halt = False
 
         self.th = Thread(target = self.keep_going_straight)
 
     def initiate_threads(self):
         self.th.start()
     
-    def is_driving_around_object(self):
-        return self.safety_driving_around_object
+    def is_driving_around_object_or_halt(self):
+        return self.safety_driving_around_object_or_halt
     
-    def set_driving_around_object(self):
-        self.safety_driving_around_object = True
+    def set_driving_around_object_or_halt(self):
+        self.safety_driving_around_object_or_halt = True
     
-    def reset_driving_around_object(self):
-        self.safety_driving_around_object = False
+    def reset_driving_around_object_or_halt(self):
+        self.safety_driving_around_object_or_halt = False
     
     def destroy_threads(self):
         self.safety_stop_force = True
+    
+    def get_now(self):
+        return datetime.datetime.now()
 
 class Drive(DriveManager):
     def __init__(self):
@@ -88,13 +92,13 @@ class Drive(DriveManager):
             # if steering_angle:
             #     config = self.get_config(self.current_speed, steering_angle)
             # else:
-            if self.safety_must_stop_for_blocking_object:
-                continue
             
             config = self.get_config()
-            print "going straight with speed {} and angle {}".format(config.drive.speed, config.drive.steering_angle)
-            if self.is_driving_around_object():
-                print "driving around object"
+            # if self.is_driving_around_object_or_halt():
+                # continue
+                # logger.info("driving around object")
+            # else:
+            logger.info("speed {} and angle {}".format(config.drive.speed, config.drive.steering_angle))
             self.ack_publisher.publish(config)
 
             # self.rate.sleep()
@@ -183,6 +187,20 @@ class Drive(DriveManager):
         # self.current_speed = 0.0
 
         return
+    
+    def halt(self, secs = 0.0, with_delay = 0.0):
+        start = datetime.datetime.now()
+        # while (datetime.datetime.now() - start).seconds <= with_delay:
+        #     continue
+
+        while (datetime.datetime.now() - start).seconds <= secs:
+            self.current_speed = 0.0
+        
+        self.current_speed = self.max_speed
+        self.reset_driving_around_object_or_halt()
+
+    def release_halt(self, speed = None):
+        self.current_speed = speed or self.max_speed
 
 class DriveTest(Drive):
     def __init__(self):
