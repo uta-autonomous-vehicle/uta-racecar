@@ -203,6 +203,9 @@ class Capture(BaseCapture):
 
 class AutoDriver(object):
     def __init__(self, use_left_camera = False):
+        # NOTE: Use left camera for turning outtwards (continous right)
+        # NOTE: Use right camera for turning inwards (continous left)
+
         self.drive = Drive()
         self.capture = Capture()
         self.save_data = False
@@ -222,10 +225,11 @@ class AutoDriver(object):
 
         image = Im.frombytes("RGB", (1280, 720), data.data)
         image = np.array(image)
-        
-        center_offset = -120
+
+        true_offset = 150
+        center_offset = true_offset
         if self.use_left_camera:
-            center_offset = 120
+            center_offset = - true_offset
         
         offset_detector = StraightLineOffsetDetector(image)
         offset_detector.filter_color()

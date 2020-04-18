@@ -137,7 +137,7 @@ class Drive(DriveManager):
                 end = datetime.datetime.now()
             # TODO: add a way to keep moving forward for x seconds or x meters
 
-            self.current_speed = 1.0
+            self.current_speed = 0.0
 
     def make_turn(self, angle = 0.0):
         # TODO: add a way to turn at an angle and straighten up after that
