@@ -17,6 +17,7 @@ import pdb
 from drive import Drive
 from path_sense.utils.cv_tools import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
+from utils import BaseImageManager
 
 now = datetime.strftime(datetime.now(), "uta_racecar_%Y-%m-%d-%H:%M:%s")
 PATH_TO_SAVE = "/media/nvidia/samsung_ssd/data/2020/{}".format(now)
@@ -31,14 +32,16 @@ class BaseCapture(object):
     def __init__(self):
         pass
 
-class Capture(BaseCapture):
+class Capture(BaseCapture, BaseImageManager):
     def __init__(self):
         BaseCapture.__init__(self)
+        BaseImageManager.__init__(self)
         self.left_seq = 0
         self.right_seq = 0
         self.seq = 0
 
         return
+    
 
     def initiate_setup_to_record_vision(self):
 
@@ -65,25 +68,6 @@ class Capture(BaseCapture):
         self.left_camera_video = cv.VideoWriter(self.file_path + '/left_camera.mp4', fourcc, 30.0, (1280,720))
         self.right_camera_video = cv.VideoWriter(self.file_path + '/right_camera.mp4', fourcc, 30.0, (1280,720))
 
-
-    def save_file(self, image, file_path_with_name):
-        open(file_path_with_name, "w").close()
-
-        if SAVE_DATA:
-            image.save(file_path_with_name)
-    
-    def read_image(self, data, format = 'RGB'):
-        # NOTE: streamed data from ZED is in BGR format
-        # NOTE: returns a PIL image
-        image = Im.frombytes("RGB", (1280, 720), data)
-        (r,g,b) = image.split()
-
-        if format == 'RGB':
-            return Im.merge("RGB", (b,g,r))
-        else:
-            return image
-
-        # return image
     
     def flush_image_cache(self):
         for i in image_cache:

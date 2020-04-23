@@ -17,10 +17,13 @@ import pdb
 from drive import Drive
 from path_sense.utils.cv_tools import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
+from utils import BaseImageManager
 
-class CaptureSecondaryView(object):
+class CaptureSecondaryView(BaseImageManager):
     def __init__(self):
         self.latest_image = None
+        self.base_dir = "/racecar/mount/april"
+        self.seq = 0
         return
     
     def set_latest_image(self, data):
@@ -29,8 +32,14 @@ class CaptureSecondaryView(object):
         return self.latest_image
     
     def callback_image(self, data):
+        self.seq += 1
+
         image = data.data
-        self.set_latest_image(image)
+        
+        image = self.read_image(image)
+        self.save_image(image, self.base_dir + '/{}.jpg'.format())
+
+        # np_image = np.asarray(image)
         # print image
     
     def register_callbacks_for_saving_data(self):
