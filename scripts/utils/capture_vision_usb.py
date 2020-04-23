@@ -15,7 +15,7 @@ import message_filters
 import pdb
 
 from drive import Drive
-from path_sense.utils.cv_tools import CVTools, StraightLineOffsetDetector
+from path_sense.utils import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
 from utils import BaseImageManager
 

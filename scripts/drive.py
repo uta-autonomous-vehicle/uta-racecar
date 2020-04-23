@@ -17,7 +17,7 @@ from threading import Thread
 from Queue import Queue
 # import queue
 from multiprocessing import Value, Process
-from utils.cv_tools import CVTools, StraightLineOffsetDetector
+from path_sense.utils import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
 
 class DriveManager(object):
