@@ -2,4 +2,5 @@
 <launch>
   <node pkg="uta-racecar" type="uta-racecar.py" name="uta_racecar" />
   <!-- <node pkg="uta-racecar" type="node_recorder.py" name="node_recorder" /> -->
+  <!-- <node pkg="uta-racecar" type="remote_view/remote_view_server.py" name="remote_view" /> -->
 </launch>
