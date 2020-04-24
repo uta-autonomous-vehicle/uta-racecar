@@ -18,6 +18,8 @@ from drive import Drive
 # from path_sense.utils import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
 
+SAVE_DATA = True
+
 class BaseImageManager(object):
     def __init__(self):
         pass

@@ -38,7 +38,7 @@ class CaptureSecondaryView(BaseImageManager):
         image = self.read_image(image, 'RGB', (640, 480))
         if image:
             print "receiving image"
-            self.save_image(image, self.base_dir + '/{}.jpg'.format())
+            self.save_file(image, self.base_dir + '/{}.jpg'.format(self.seq))
 
         # np_image = np.asarray(image)
         # print image
