@@ -28,6 +28,10 @@ SAVE_DATA = True
 left_seq = 0
 right_seq = 0
 
+IMAGE_HEIGHT = rospy.get_param("/uta_racecar/ZED_IMAGE_HEIGHT")
+IMAGE_WIDTH = rospy.get_param("/uta_racecar/ZED_IMAGE_WIDTH")
+IMAGE_SHAPE = (IMAGE_WIDTH, IMAGE_HEIGHT)
+
 class BaseCapture(object):
     def __init__(self):
         pass
@@ -65,8 +69,8 @@ class Capture(BaseCapture, BaseImageManager):
         self.file_to_write_autonomous = open(self.file_path + "/drive_autonomous.txt", 'a')
 
         fourcc = cv.VideoWriter_fourcc(*'mp4v')
-        self.left_camera_video = cv.VideoWriter(self.file_path + '/left_camera.mp4', fourcc, 30.0, (1280,720))
-        self.right_camera_video = cv.VideoWriter(self.file_path + '/right_camera.mp4', fourcc, 30.0, (1280,720))
+        self.left_camera_video = cv.VideoWriter(self.file_path + '/left_camera.mp4', fourcc, 30.0, (IMAGE_SHAPE))
+        self.right_camera_video = cv.VideoWriter(self.file_path + '/right_camera.mp4', fourcc, 30.0, (IMAGE_SHAPE))
 
     
     def flush_image_cache(self):

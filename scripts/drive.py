@@ -20,6 +20,9 @@ from multiprocessing import Value, Process
 from path_sense.utils import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
 
+IMAGE_HEIGHT = rospy.get_param("/uta_racecar/ZED_IMAGE_HEIGHT")
+IMAGE_HEIGHT = rospy.get_param("/uta_racecar/ZED_IMAGE_WIDTH")
+
 class DriveManager(object):
     def __init__(self):
         self.safety_stop_force = False

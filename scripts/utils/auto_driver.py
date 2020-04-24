@@ -25,6 +25,9 @@ now = datetime.strftime(datetime.now(), "uta_racecar_%Y-%m-%d-%H:%M:%s")
 PATH_TO_SAVE = "/media/nvidia/samsung_ssd/data/2020/{}".format(now)
 SAVE_DATA = True
 
+IMAGE_HEIGHT = rospy.get_param("/uta_racecar/ZED_IMAGE_HEIGHT")
+IMAGE_WIDTH = rospy.get_param("/uta_racecar/ZED_IMAGE_WIDTH")
+
 class AutoDriverManager(object):
     def __init__(self):
         self.seq_for_autonomy = -1
@@ -65,7 +68,7 @@ class AutoDriver(AutoDriverManager):
         seq = self.get_seq_for_autonomy()
         logger.info("recieved image for autonomy activity at %s", seq)
 
-        image = Im.frombytes("RGB", (1280, 720), data.data)
+        image = Im.frombytes("RGB", (IMAGE_WIDTH, IMAGE_HEIGHT), data.data)
         image = np.array(image)
 
         true_offset = 150
@@ -81,10 +84,10 @@ class AutoDriver(AutoDriverManager):
         if -0.34 < steering_angle and steering_angle < 0.34:
             self.drive.safety_must_stop_for_blocking_object = False
             # NOTE: TO PREVENT UNDER STEERING
-            # if math.fabs(steering_angle) <= 0.1:
-            #     self.drive.current_speed = 1.0
-            # else:
-            #     self.drive.current_speed = 0.5
+            if math.fabs(steering_angle) <= 0.1:
+                self.drive.current_speed = self.drive.max_speed
+            else:
+                self.drive.current_speed = self.drive.max_speed/2
 
             self.drive.make_turn(steering_angle)
             
@@ -115,7 +118,7 @@ class AutoDriver(AutoDriverManager):
         last_stopped_at = self.get_last_stopped_at()
         
         logger.info("recieved image for halting activity at %s", seq)
-        image = Im.frombytes("RGB", (1280, 720), data.data)
+        image = Im.frombytes("RGB", (IMAGE_WIDTH, IMAGE_HEIGHT), data.data)
         image = np.array(image)
 
         stopping_mark_detector = StraightLineOffsetDetector(image)
@@ -130,7 +133,8 @@ class AutoDriver(AutoDriverManager):
             self.set_last_stopped_at(seq)
 
             self.drive.set_driving_around_object_or_halt()
-            Thread(target=self.drive.halt, args=(5,0.5)).start()
+            self.drive.halt(2)
+            # Thread(target=self.drive.halt, args=(5,0.5)).start()
 
     def disable_drive(self):
         self.drive.destroy_threads()
@@ -143,6 +147,7 @@ class AutoDriver(AutoDriverManager):
             node_to_listen = '/zed/left/image_rect_color'
         else:
             node_to_listen = '/zed/right/image_rect_color'
+        
         rospy.Subscriber(node_to_listen, Image, self.callback_for_halting_activity)
         rospy.Subscriber(node_to_listen, Image, self.callback_for_autonomy)
         rospy.on_shutdown(self.disable_drive)

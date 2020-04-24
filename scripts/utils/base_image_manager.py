@@ -20,6 +20,10 @@ from path_sense.utils.logger import logger
 
 SAVE_DATA = True
 
+IMAGE_HEIGHT = rospy.get_param("/uta_racecar/ZED_IMAGE_HEIGHT")
+IMAGE_WIDTH = rospy.get_param("/uta_racecar/ZED_IMAGE_WIDTH")
+IMAGE_SHAPE = (IMAGE_WIDTH, IMAGE_HEIGHT)
+
 class BaseImageManager(object):
     def __init__(self):
         pass
@@ -30,7 +34,7 @@ class BaseImageManager(object):
         if SAVE_DATA:
             image.save(file_path_with_name)
 
-    def read_image(self, data, format = 'RGB', shape = (1280, 720)):
+    def read_image(self, data, format = 'RGB', shape = IMAGE_SHAPE):
         # NOTE: streamed data from ZED is in BGR format
         # NOTE: returns a PIL image
         image = Im.frombytes("RGB", shape, data)

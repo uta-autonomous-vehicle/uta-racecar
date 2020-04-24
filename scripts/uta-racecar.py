@@ -6,9 +6,10 @@ from sensor_msgs.msg import Joy
 from std_msgs.msg import Header
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 
-import actionlib    
 from utils import Capture, AutoDriver
 from drive import Drive, DriveTest
+
+import actionlib    
 
 # print "............"
 def joy_callback(msg):
@@ -29,7 +30,7 @@ def package_init(message = ""):
 if __name__ == "__main__":
     package_init("uta-racecar started")
     rospy.init_node("uta_racecar")
-    
+
     driver = AutoDriver(use_left_camera = True)
     driver.drive_autonomous()
     # driver.drive_and_save_data()
