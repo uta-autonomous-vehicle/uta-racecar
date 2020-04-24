@@ -15,7 +15,7 @@ import message_filters
 import pdb
 
 from drive import Drive
-from path_sense.utils import CVTools, StraightLineOffsetDetector
+# from path_sense.utils import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
 
 class BaseImageManager(object):
@@ -28,10 +28,10 @@ class BaseImageManager(object):
         if SAVE_DATA:
             image.save(file_path_with_name)
 
-    def read_image(self, data, format = 'RGB'):
+    def read_image(self, data, format = 'RGB', shape = (1280, 720)):
         # NOTE: streamed data from ZED is in BGR format
         # NOTE: returns a PIL image
-        image = Im.frombytes("RGB", (1280, 720), data)
+        image = Im.frombytes("RGB", shape, data)
         (r,g,b) = image.split()
 
         if format == 'RGB':

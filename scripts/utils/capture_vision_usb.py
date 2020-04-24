@@ -17,7 +17,7 @@ import pdb
 from drive import Drive
 from path_sense.utils import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
-from utils import BaseImageManager
+from image_manager import BaseImageManager
 
 class CaptureSecondaryView(BaseImageManager):
     def __init__(self):
@@ -35,9 +35,10 @@ class CaptureSecondaryView(BaseImageManager):
         self.seq += 1
 
         image = data.data
-        
-        image = self.read_image(image)
-        self.save_image(image, self.base_dir + '/{}.jpg'.format())
+        image = self.read_image(image, 'RGB', (640, 480))
+        if image:
+            print "receiving image"
+            self.save_image(image, self.base_dir + '/{}.jpg'.format())
 
         # np_image = np.asarray(image)
         # print image
