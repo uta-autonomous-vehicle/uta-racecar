@@ -1,3 +1,4 @@
+import socket
 import rospy
 import math
 import time
@@ -11,18 +12,25 @@ from datetime import datetime
 import numpy as np
 import cv2 as cv
 
+import os
 import message_filters
 import pdb
 
 from drive import Drive
 from path_sense.utils import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
-from image_manager import BaseImageManager
+from base_image_manager import BaseImageManager
 
 class CaptureSecondaryView(BaseImageManager):
     def __init__(self):
+        self.begin_date = datetime.strftime(datetime.now(), "UTARACECAR_%Y%m%d.")
+        self.begin_time = datetime.strftime(datetime.now(), "%H%M%S")
+
         self.latest_image = None
         self.base_dir = "/racecar/mount/april"
+
+        os.mkdir(self.base_dir)
+
         self.seq = 0
         return
     

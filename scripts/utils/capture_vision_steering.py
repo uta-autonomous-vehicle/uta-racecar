@@ -17,7 +17,7 @@ import pdb
 from drive import Drive
 from path_sense.utils import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
-from image_manager import BaseImageManager
+from base_image_manager import BaseImageManager
 
 now = datetime.strftime(datetime.now(), "uta_racecar_%Y-%m-%d-%H:%M:%s")
 PATH_TO_SAVE = "/media/nvidia/samsung_ssd/data/2020/{}".format(now)
