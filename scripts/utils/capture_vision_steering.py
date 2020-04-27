@@ -45,34 +45,7 @@ class Capture(BaseCapture, BaseImageManager):
         self.seq = 0
 
         return
-    
 
-    def initiate_setup_to_record_vision(self):
-
-        self.begin_date = datetime.strftime(datetime.now(), "UTARACECAR_%Y%m%d.")
-        self.begin_time = datetime.strftime(datetime.now(), "%H%M%S")
-        
-        self.file_path = "/media/nvidia/data/2020/"
-        self.file_path += self.begin_date + self.begin_time
-        
-        os.mkdir(self.file_path)
-        # os.mkdir(self.file_path + "images")
-        os.mkdir(self.file_path + "/left_camera")
-        os.mkdir(self.file_path + "/right_camera")
-
-        open(self.file_path + "/left_camera.txt", "w").close()
-        open(self.file_path + "/right_camera.txt", "w").close()
-        open(self.file_path + "/drive_autonomous.txt", "w").close()
-
-        self.file_to_write_left = open(self.file_path + "/left_camera.txt", 'a')
-        self.file_to_write_right = open(self.file_path + "/right_camera.txt", 'a')
-        self.file_to_write_autonomous = open(self.file_path + "/drive_autonomous.txt", 'a')
-
-        fourcc = cv.VideoWriter_fourcc(*'mp4v')
-        self.left_camera_video = cv.VideoWriter(self.file_path + '/left_camera.mp4', fourcc, 30.0, (IMAGE_SHAPE))
-        self.right_camera_video = cv.VideoWriter(self.file_path + '/right_camera.mp4', fourcc, 30.0, (IMAGE_SHAPE))
-
-    
     def flush_image_cache(self):
         for i in image_cache:
             self.save_file(self.read_image(i[1]), self.file_path + "/left_camera/{}.jpg".format(i[0]))
@@ -88,12 +61,13 @@ class Capture(BaseCapture, BaseImageManager):
             image_tool = CVTools(image)
             image_tool.add_text_to_image(steering_angle_text, (100, 100))
             image = image_tool.image
-            self.left_camera_video.write(image)
+            BaseImageManager.LEFT_CAMERA.write(image)
 
             logger.info("saving frame {}".format(self.left_seq))
 
             # image = Im.fromarray(image)
-            # self.save_file(image, self.file_path + "/left_camera/{}.jpg".format(self.left_seq))
+            image_path = os.path.join(BaseImageManager.LEFT_CAMERA_DIR, "{}.jpg".format(self.left_seq))
+            self.save_file(image,  image_path)
 
         file_to_write = file_to_write or open(self.file_path + "/left_camera.txt", 'a')
         file_to_write.write("{}.jpg ".format(self.left_seq))
@@ -115,12 +89,12 @@ class Capture(BaseCapture, BaseImageManager):
             image_tool = CVTools(image)
             image_tool.add_text_to_image(steering_angle_text, (100, 100))
             image = image_tool.image
-            self.right_camera_video.write(image)
+            BaseImageManager.RIGHT_CAMERA.write(image)
 
             logger.info("saving frame {}".format(self.right_seq))
             
-            # image = Im.fromarray(image)
-            # self.save_file(image, self.file_path + "/right_camera/{}.jpg".format(self.right_seq))
+            image_path = os.path.join(BaseImageManager.LEFT_CAMERA_DIR, "{}.jpg".format(self.left_seq))
+            self.save_file(image,  image_path)
 
         file_to_write = file_to_write or open(self.file_path + "/right_camera.txt", 'a')
         file_to_write.write("{}.jpg ".format(self.right_seq))
@@ -147,14 +121,14 @@ class Capture(BaseCapture, BaseImageManager):
                 file_to_write.close()
 
     def sync_camera_steering(self, camera_left, camera_right, steering):
-        self.left_camera_input(camera_left, steering.drive.steering_angle, self.file_to_write_left)
-        self.right_camera_input(camera_right, steering.drive.steering_angle, self.file_to_write_right)
+        self.left_camera_input(camera_left, steering.drive.steering_angle, BaseImageManager.LEFT_CAMERA_TXT)
+        self.right_camera_input(camera_right, steering.drive.steering_angle, BaseImageManager.RIGHT_CAMERA_TXT)
 
-        self.ackermann_input(steering, self.file_to_write_left)
-        self.ackermann_input(steering, self.file_to_write_right)
+        self.ackermann_input(steering, BaseImageManager.LEFT_CAMERA_TXT)
+        self.ackermann_input(steering, BaseImageManager.RIGHT_CAMERA_TXT)
 
-        self.file_to_write_left.write("\n")
-        self.file_to_write_right.write("\n")
+        BaseImageManager.LEFT_CAMERA_TXT.write("\n")
+        BaseImageManager.RIGHT_CAMERA_TXT.write("\n")
         # file_to_write.close()
         self.seq += 1
 
@@ -164,12 +138,12 @@ class Capture(BaseCapture, BaseImageManager):
         print "Node shutting down, saving data"
         # print "{} left and {} right images to {}".format(self.left_seq, self.right_seq, self.file_path)
 
-        self.file_to_write_left.close()
-        self.file_to_write_right.close()
-        self.file_to_write_autonomous.close()
+        BaseImageManager.LEFT_CAMERA_TXT.close()
+        BaseImageManager.RIGHT_CAMERA_TXT.close()
+        BaseImageManager.AUTONOMOUS_TXT.close()
 
-        self.left_camera_video.release()
-        self.right_camera_video.release()
+        BaseImageManager.LEFT_CAMERA.release()
+        BaseImageManager.RIGHT_CAMERA.release()
 
         # self.convert_images_to_video_seq()
 
