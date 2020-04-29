@@ -27,7 +27,5 @@ if __name__ == '__main__':
     # app.run(host=host+':3000', debug=True)
 
     usb_camera = CaptureSecondaryView()
-    usb_camera.register_callbacks_for_saving_data()
-
     while not rospy.is_shutdown():
         rospy.spin()

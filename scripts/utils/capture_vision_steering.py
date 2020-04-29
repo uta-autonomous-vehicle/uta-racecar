@@ -19,8 +19,8 @@ from path_sense.utils import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
 from base_image_manager import BaseImageManager
 
-now = datetime.strftime(datetime.now(), "uta_racecar_%Y-%m-%d-%H:%M:%s")
-PATH_TO_SAVE = "/media/nvidia/samsung_ssd/data/2020/{}".format(now)
+# now = datetime.strftime(datetime.now(), "uta_racecar_%Y-%m-%d-%H:%M:%s")
+# PATH_TO_SAVE = "/media/nvidia/samsung_ssd/data/2020/{}".format(now)
 SAVE_DATA = True
 
 # right_file = open("/media/nvidia/samsung_ssd/data/2020/left_camera.txt", 'a')

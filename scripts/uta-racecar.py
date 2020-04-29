@@ -28,7 +28,7 @@ def package_init(message = ""):
     print message
 
 if __name__ == "__main__":
-    package_init("uta-racecar started")
+    # package_init("uta-racecar started")
     rospy.init_node("uta_racecar")
 
     driver = AutoDriver(use_left_camera = True)
@@ -46,7 +46,9 @@ if __name__ == "__main__":
     # drive.initiate_threads()
     # drive.go_back(5)
     # drive.go_left()
-    # drive.go_right()
+    # drive.go_left_circle()
+    # drive.destroy_threads()
+    # rospy.signal_shutdown("shutdown")
     
     while not rospy.is_shutdown():
         rospy.spin()

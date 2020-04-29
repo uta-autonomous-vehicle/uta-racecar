@@ -43,21 +43,20 @@ class BaseImageManager(object):
         pass
 
     def create_dir_for_images(self):
-        os.mkdir(self.file_path)
 
-        BaseImageManager.LEFT_CAMERA_DIR = os.path.join(self.file_path, "left_camera")
-        BaseImageManager.RIGHT_CAMERA_DIR = os.path.join(self.file_path, "right_camera")
-        BaseImageManager.USB_CAMERA_DIR = os.path.join(self.file_path, "usb_camera")
+        BaseImageManager.LEFT_CAMERA_DIR = os.path.join(BaseImageManager.FILE_PATH, "left_camera")
+        BaseImageManager.RIGHT_CAMERA_DIR = os.path.join(BaseImageManager.FILE_PATH, "right_camera")
+        BaseImageManager.USB_CAMERA_DIR = os.path.join(BaseImageManager.FILE_PATH, "usb_camera")
 
         os.mkdir(BaseImageManager.LEFT_CAMERA_DIR)
         os.mkdir(BaseImageManager.RIGHT_CAMERA_DIR)
         os.mkdir(BaseImageManager.USB_CAMERA_DIR)
     
     def create_log_files_for_images(self):
-        left_camera_txt = os.path.join(self.file_path, "left_camera.txt")
-        right_camera_txt = os.path.join(self.file_path, "right_camera.txt")
-        usb_camera_txt = os.path.join(self.file_path, "usb_camera.txt")
-        drive_autonomous_txt = os.path.join(self.file_path, "drive_autonomous.txt")
+        left_camera_txt = os.path.join(BaseImageManager.FILE_PATH, "left_camera.txt")
+        right_camera_txt = os.path.join(BaseImageManager.FILE_PATH, "right_camera.txt")
+        usb_camera_txt = os.path.join(BaseImageManager.FILE_PATH, "usb_camera.txt")
+        drive_autonomous_txt = os.path.join(BaseImageManager.FILE_PATH, "drive_autonomous.txt")
 
         open(left_camera_txt, "w").close()
         open(right_camera_txt, "w").close()
@@ -78,15 +77,15 @@ class BaseImageManager(object):
         self.begin_time = datetime.strftime(datetime.now(), "%H%M%S")
 
         file_path = os.path.abspath("/media/nvidia/data/2020")
-        self.file_path = os.path.join(file_path, self.begin_date, self.begin_time)
-        BaseImageManager.FILE_PATH = self.file_path
+        BaseImageManager.FILE_PATH = os.path.join(file_path, self.begin_date + self.begin_time)
+        os.mkdir(BaseImageManager.FILE_PATH)
 
         self.create_dir_for_images()
         self.create_log_files_for_images()
 
         fourcc = cv.VideoWriter_fourcc(*'mp4v')
-        BaseImageManager.LEFT_CAMERA = cv.VideoWriter(self.file_path + '/left_camera.mp4', fourcc, 30.0, (IMAGE_SHAPE))
-        BaseImageManager.RIGHT_CAMERA = cv.VideoWriter(self.file_path + '/right_camera.mp4', fourcc, 30.0, (IMAGE_SHAPE))
+        BaseImageManager.LEFT_CAMERA = cv.VideoWriter(BaseImageManager.FILE_PATH + '/left_camera.mp4', fourcc, 30.0, (IMAGE_SHAPE))
+        BaseImageManager.RIGHT_CAMERA = cv.VideoWriter(BaseImageManager.FILE_PATH + '/right_camera.mp4', fourcc, 30.0, (IMAGE_SHAPE))
     
     def save_file(self, image, file_path_with_name):
         # image type: PIL.Image
