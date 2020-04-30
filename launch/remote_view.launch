@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="uta-racecar" type="remote_view_server.py" name="remote_view" />
+</launch>

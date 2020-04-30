@@ -17,31 +17,38 @@ from threading import Thread
 from Queue import Queue
 # import queue
 from multiprocessing import Value, Process
-from utils.cv_tools import CVTools, StraightLineOffsetDetector
+from path_sense.utils import CVTools, StraightLineOffsetDetector
+from path_sense.utils.logger import logger
+
+IMAGE_HEIGHT = rospy.get_param("/uta_racecar/ZED_IMAGE_HEIGHT")
+IMAGE_HEIGHT = rospy.get_param("/uta_racecar/ZED_IMAGE_WIDTH")
 
 class DriveManager(object):
     def __init__(self):
         self.safety_stop_force = False
         self.safety_stop_no_path = False
         self.safety_must_stop_for_blocking_object = False
-        self.safety_driving_around_object = False
+        self.safety_driving_around_object_or_halt = False
 
         self.th = Thread(target = self.keep_going_straight)
 
     def initiate_threads(self):
         self.th.start()
     
-    def is_driving_around_object(self):
-        return self.safety_driving_around_object
+    def is_driving_around_object_or_halt(self):
+        return self.safety_driving_around_object_or_halt
     
-    def set_driving_around_object(self):
-        self.safety_driving_around_object = True
+    def set_driving_around_object_or_halt(self):
+        self.safety_driving_around_object_or_halt = True
     
-    def reset_driving_around_object(self):
-        self.safety_driving_around_object = False
+    def reset_driving_around_object_or_halt(self):
+        self.safety_driving_around_object_or_halt = False
     
     def destroy_threads(self):
         self.safety_stop_force = True
+    
+    def get_now(self):
+        return datetime.datetime.now()
 
 class Drive(DriveManager):
     def __init__(self):
@@ -53,7 +60,7 @@ class Drive(DriveManager):
 
         self.max_angle = 0.340000003576
 
-        self.current_speed = 1.0
+        self.current_speed = 0.0
         self.current_steering_angle = 0.0
 
         self.acceleration = 1.0
@@ -83,18 +90,18 @@ class Drive(DriveManager):
         return not self.safety_stop_force
 
     def keep_going_straight(self):
-        while self.safety_check() or not rospy.is_shutdown():
+        while not rospy.is_shutdown() or self.safety_check():
             # steering_angle = q.get()
             # if steering_angle:
             #     config = self.get_config(self.current_speed, steering_angle)
             # else:
-            if self.safety_must_stop_for_blocking_object:
-                continue
             
             config = self.get_config()
-            print "going straight with speed {} and angle {}".format(config.drive.speed, config.drive.steering_angle)
-            if self.is_driving_around_object():
-                print "driving around object"
+            # if self.is_driving_around_object_or_halt():
+                # continue
+                # logger.info("driving around object")
+            # else:
+            # logger.info("speed {} and angle {}".format(config.drive.speed, config.drive.steering_angle))
             self.ack_publisher.publish(config)
 
             # self.rate.sleep()
@@ -148,41 +155,55 @@ class Drive(DriveManager):
     def go_left(self, angle = 0.0):
         # TODO: add a way to make a 90 turn and straighten up
         start = datetime.datetime.now()
+        speed = self.current_speed
+        self.current_speed = 1.0
 
-        while (datetime.datetime.now() - start).seconds < 3.4:
-            self.current_speed = 2.0
+        while (datetime.datetime.now() - start).total_seconds() < 3.4:
+            self.current_speed = 1.0
             self.current_steering_angle = self.max_angle
+
+            time.sleep(.001)
             
-        self.current_speed = 0.0
+        self.current_speed = speed
 
         return
 
     def go_right(self, angle = 0.0):
         # TODO: add a way to make a 90 turn and straighten up
         start = datetime.datetime.now()
+        speed = self.current_speed
+        self.current_speed = 1.0
 
-        while (datetime.datetime.now() - start).seconds < 2:
-            self.current_speed = 2.0
+        while (datetime.datetime.now() - start).total_seconds() < 3.4:
+            self.current_speed = 1.0
             self.current_steering_angle = - self.max_angle
+            time.sleep(.001)
             
-        self.current_speed = 0.0
-
+        self.current_speed = speed
         return
     
     def go_right_circle(self, angle = 0.0):
         # TODO: add a way to make a 90 turn and straighten up
+        for _ in range(4):
+            self.go_right()
+    
+    def go_left_circle(self, angle = 0.0):
+        # TODO: add a way to make a 90 turn and straighten up
+        for _ in range(4):
+            self.go_left()
+
+    def halt(self, secs = 0.0, with_delay = 0.0):
         start = datetime.datetime.now()
+        # while (datetime.datetime.now() - start).seconds <= with_delay:
+        #     continue
 
-        while (datetime.datetime.now() - start).seconds <= 1:
-            self.current_speed = 1.0
-            self.current_steering_angle = - self.max_angle
+        while (datetime.datetime.now() - start).seconds <= secs:
+            self.current_speed = 0.0
+            
+        # self.reset_driving_around_object_or_halt()
 
-            time.sleep(0.1)
-        
-        self.current_steering_angle = 0.0
-        # self.current_speed = 0.0
-
-        return
+    def release_halt(self, speed = None):
+        self.current_speed = speed or self.max_speed
 
 class DriveTest(Drive):
     def __init__(self):
