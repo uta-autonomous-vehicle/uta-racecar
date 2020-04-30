@@ -38,6 +38,7 @@ class CaptureSecondaryView(BaseImageManager):
         # os.mkdir(self.base_dir)
 
         self.seq = 0
+        self.video_seq = 0
         self.register_callbacks_for_saving_data()
         return
     
@@ -46,32 +47,41 @@ class CaptureSecondaryView(BaseImageManager):
     def get_latest_image(self, data):
         return self.latest_image
     
-    def extra_image(self, data):
+    def extract_image(self, data, rgb_format = "RAW"):
+        image_raw = data
         image_height = rospy.get_param("/usb_cam/image_height")
         image_width = rospy.get_param("/usb_cam/image_width")
         
-        image = self.read_image(image_raw, 'RGB', (image_width, image_height))
+        image = self.read_image(image_raw, rgb_format, (image_width, image_height))
         logger.debug("extracting image from raw data")
         return image
     
     def callback_image(self, data):
+        logger.debug("request to record and image from USB received at callback")
         self.seq += 1
 
         image_raw = data.data
-        image = self.extra_image(image_raw)
+        image = self.extract_image(image_raw)
         
         if image:
             image_path = os.path.join(BaseImageManager.USB_CAMERA_DIR, "{}.jpg".format(self.seq))
             self.save_file(image, image_path)
     
     def callback_record_video(self, data):
-        logger.debug("writing video")
+        self.video_seq += 1
+        logger.debug("request to record video received %s", self.video_seq)
+        if not BaseImageManager.USB_CAMERA or not data:
+            return
 
+        logger.debug("writing video")        
         image_raw = data.data
-        image = self.extra_image(image_raw)
-        # BaseImageManager.USB_CAMERA.write(image)
+        image = self.extract_image(image_raw, "RGB")
+        if image:
+            logger.debug("extracted frame for video")
+            image = np.asarray(image)
+            BaseImageManager.USB_CAMERA.write(image)
 
-    def record_short_video(self, duration = 60.0):
+    def record_short_video(self, duration = 10.0):
         # duration type:int in seconds
         started = datetime.now()
         
@@ -83,21 +93,23 @@ class CaptureSecondaryView(BaseImageManager):
         image_width = rospy.get_param("/usb_cam/image_width")
         image_shape = (image_width, image_height)
 
-        logger.info("setting up recorder")
+        logger.info("setting up recorder %s", framerate)
         fourcc = cv.VideoWriter_fourcc(*'mp4v')
         BaseImageManager.USB_CAMERA = cv.VideoWriter(video_path, fourcc, float(framerate), (image_shape))
         logger.info("set recorder")
-
+        
+        self.video_seq = 0
+        self.usb_image_subscriber = rospy.Subscriber("/usb_cam/image_raw", Image, self.callback_record_video)
+        
         while (datetime.now() - started).seconds < duration:
             logger.info("waiting for duration")
             time.sleep(1)
             pass
         
         self.usb_image_subscriber.unregister()
+        time.sleep(2)
         BaseImageManager.USB_CAMERA.release()
-
     
     def register_callbacks_for_saving_data(self):
-        self.sub = rospy.Subscriber("/usb_cam/image_raw", Image, self.callback_image)
-        self.usb_image_subscriber = rospy.Subscriber("/usb_cam/image_raw", Image, self.callback_record_video)
+        # self.sub = rospy.Subscriber("/usb_cam/image_raw", Image, self.callback_image)
         return True

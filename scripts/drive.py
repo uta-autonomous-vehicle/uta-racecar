@@ -60,7 +60,7 @@ class Drive(DriveManager):
 
         self.max_angle = 0.340000003576
 
-        self.current_speed = 0.0
+        self.current_speed = 1.0
         self.current_steering_angle = 0.0
 
         self.acceleration = 1.0

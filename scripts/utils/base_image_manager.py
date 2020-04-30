@@ -35,8 +35,9 @@ class BaseImageManager(object):
     AUTONOMOUS_TXT = ""
     USB_CAMERA_TXT= ""
 
-    LEFT_CAMERA = ""
-    RIGHT_CAMERA = ""
+    LEFT_CAMERA = None
+    RIGHT_CAMERA = None
+    USB_CAMERA = None
 
     def __init__(self):
         self.initiate_setup_to_record_vision()
@@ -89,7 +90,7 @@ class BaseImageManager(object):
     
     def save_file(self, image, file_path_with_name):
         # image type: PIL.Image
-        if type(a) == np.ndarray:
+        if type(image) == np.ndarray:
             image = Im.fromarray(image)
 
         open(file_path_with_name, "w").close()
@@ -104,9 +105,9 @@ class BaseImageManager(object):
         # NOTE: streamed data from ZED is in BGR format
         # NOTE: returns a PIL image
         image = Im.frombytes("RGB", shape, data)
-        (r,g,b) = image.split()
 
         if format == 'RGB':
+            (r,g,b) = image.split()
             return Im.merge("RGB", (b,g,r))
         else:
             return image
