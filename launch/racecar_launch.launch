@@ -1,10 +1,12 @@
 <!-- -*- mode: XML -*- -->
 <launch>
-  <node pkg="uta-racecar" type="uta-racecar.py" name="uta_racecar">
+  <node pkg="uta_racecar" type="uta-racecar.py" name="uta_racecar">
     <param name="ZED_IMAGE_WIDTH" type="int" value="1280"/>
     <param name="ZED_IMAGE_HEIGHT" type="int" value="720"/>
   </node>
+  <!-- <node pkg="uta_racecar" type="process_usb_capture.py" name="process_usb_capture">
+    <param name="ZED_IMAGE_WIDTH" type="int" value="1280"/>
+    <param name="ZED_IMAGE_HEIGHT" type="int" value="720"/>
+  </node> -->
   
-  <!-- <node pkg="uta-racecar" type="node_recorder.py" name="node_recorder" /> -->
-  <!-- <node pkg="uta-racecar" type="remote_view/remote_view_server.py" name="remote_view" /> -->
 </launch>

@@ -1,0 +1,7 @@
+<!-- -*- mode: XML -*- -->
+<launch>
+  <node pkg="uta_racecar" type="process_usb_capture.py" name="process_usb_capture">
+    <param name="ZED_IMAGE_WIDTH" type="int" value="640"/>
+    <param name="ZED_IMAGE_HEIGHT" type="int" value="480"/>
+  </node>
+</launch>

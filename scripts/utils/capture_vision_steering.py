@@ -55,17 +55,17 @@ class Capture(BaseCapture, BaseImageManager):
     def left_camera_input(self, data, steering_angle, file_to_write = None, using_standalone = False):
         steering_angle_text = "Angle: {}".format(steering_angle)
         if data.data:
-            image = self.read_image(data.data)
+            image = self.read_image(data.data, "RGB")
             image = np.asarray(image)
 
             image_tool = CVTools(image)
             image_tool.add_text_to_image(steering_angle_text, (100, 100))
             image = image_tool.image
-            BaseImageManager.LEFT_CAMERA.write(image)
+            # BaseImageManager.LEFT_CAMERA.write(image)
 
             logger.info("saving frame {}".format(self.left_seq))
 
-            # image = Im.fromarray(image)
+            image = Im.fromarray(image)
             image_path = os.path.join(BaseImageManager.LEFT_CAMERA_DIR, "{}.jpg".format(self.left_seq))
             self.save_file(image,  image_path)
 
@@ -83,18 +83,18 @@ class Capture(BaseCapture, BaseImageManager):
     def right_camera_input(self, data, steering_angle, file_to_write = None, using_standalone = False):
         steering_angle_text = "Angle: {}".format(steering_angle)
         if data.data:
-            image = self.read_image(data.data)
+            image = self.read_image(data.data, "RGB")
             image = np.asarray(image)
 
             image_tool = CVTools(image)
             image_tool.add_text_to_image(steering_angle_text, (100, 100))
             image = image_tool.image
-            BaseImageManager.RIGHT_CAMERA.write(image)
+            # BaseImageManager.RIGHT_CAMERA.write(image)
 
             logger.info("saving frame {}".format(self.right_seq))
             
-            image_path = os.path.join(BaseImageManager.LEFT_CAMERA_DIR, "{}.jpg".format(self.left_seq))
-            self.save_file(image,  image_path)
+            image_path = os.path.join(BaseImageManager.RIGHT_CAMERA_DIR, "{}.jpg".format(self.left_seq))
+            self.save_file(image, image_path)
 
         file_to_write = file_to_write or open(self.file_path + "/right_camera.txt", 'a')
         file_to_write.write("{}.jpg ".format(self.right_seq))
@@ -148,10 +148,10 @@ class Capture(BaseCapture, BaseImageManager):
         # self.convert_images_to_video_seq()
 
     def register_callbacks_for_saving_data(self):
-        # rospy.Subscriber("/zed/left/image_rect_color", Image, self.left_camera)
+        # rospy.Subscriber("/zed/rgb/image_rect_color", Image, self.left_camera)
         # rospy.Subscriber("/zed/right/image_rect_color", Image, right_camera)
         
-        camera_sub_left = message_filters.Subscriber("/zed/left/image_rect_color", Image)
+        camera_sub_left = message_filters.Subscriber("/zed/rgb/image_rect_color", Image)
         camera_sub_right = message_filters.Subscriber("/zed/right/image_rect_color", Image)
         angle_sub = message_filters.Subscriber("/ackermann_cmd_mux/output", AckermannDriveStamped)
 

@@ -1,4 +1,8 @@
-<?xml version="1.0"?>
+<!-- -*- mode: XML -*- -->
 <launch>
-  <node pkg="uta-racecar" type="remote_view_server.py" name="remote_view" />
+  <node pkg="uta_racecar" type="process_usb_capture.py" name="process_usb_capture">
+  </node>
+  
+  <!-- <node pkg="uta-racecar" type="node_recorder.py" name="node_recorder" /> -->
+  <!-- <node pkg="uta-racecar" type="remote_view/remote_view_server.py" name="remote_view" /> -->
 </launch>

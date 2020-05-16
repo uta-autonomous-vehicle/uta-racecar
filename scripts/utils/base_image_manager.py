@@ -47,10 +47,12 @@ class BaseImageManager(object):
 
         BaseImageManager.LEFT_CAMERA_DIR = os.path.join(BaseImageManager.FILE_PATH, "left_camera")
         BaseImageManager.RIGHT_CAMERA_DIR = os.path.join(BaseImageManager.FILE_PATH, "right_camera")
+        BaseImageManager.AUTONOMOUS_DIR = os.path.join(BaseImageManager.FILE_PATH, "autonomous_camera")
         BaseImageManager.USB_CAMERA_DIR = os.path.join(BaseImageManager.FILE_PATH, "usb_camera")
 
         os.mkdir(BaseImageManager.LEFT_CAMERA_DIR)
         os.mkdir(BaseImageManager.RIGHT_CAMERA_DIR)
+        os.mkdir(BaseImageManager.AUTONOMOUS_DIR)
         os.mkdir(BaseImageManager.USB_CAMERA_DIR)
     
     def create_log_files_for_images(self):
@@ -101,15 +103,12 @@ class BaseImageManager(object):
     def save_image(self, image, file_path_with_name):
         self.save_file(image, file_path_with_name)
 
-    def read_image(self, data, format = 'RGB', shape = IMAGE_SHAPE):
+    def read_image(self, data, rgb_format = 'RGB', shape = IMAGE_SHAPE):
         # NOTE: streamed data from ZED is in BGR format
         # NOTE: returns a PIL image
         image = Im.frombytes("RGB", shape, data)
-
-        if format == 'RGB':
+        if rgb_format == 'RGB':
             (r,g,b) = image.split()
             return Im.merge("RGB", (b,g,r))
         else:
             return image
-
-        # return image
