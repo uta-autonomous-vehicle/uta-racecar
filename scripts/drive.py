@@ -36,7 +36,7 @@ class DriveManager(object):
         self.th.start()
     
     def is_driving_around_object_or_halt(self):
-        return self.safety_driving_around_object_or_halt
+        return self.safety_driving_around_object_or_halt or self.safety_must_stop_for_blocking_object
     
     def set_driving_around_object_or_halt(self):
         self.safety_driving_around_object_or_halt = True
@@ -97,9 +97,9 @@ class Drive(DriveManager):
             # else:
             
             config = self.get_config()
-            # if self.is_driving_around_object_or_halt():
-                # continue
-                # logger.info("driving around object")
+            if self.is_driving_around_object_or_halt():
+                continue
+                logger.info("driving around object")
             # else:
             # logger.info("speed {} and angle {}".format(config.drive.speed, config.drive.steering_angle))
             self.ack_publisher.publish(config)

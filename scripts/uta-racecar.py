@@ -6,9 +6,8 @@ from sensor_msgs.msg import Joy
 from std_msgs.msg import Header
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 
-from utils import Capture, AutoDriver
+from utils import Capture, AutoDriver, BaseImageManager
 from drive import Drive, DriveTest
-
 import actionlib    
 
 # print "............"
@@ -31,6 +30,9 @@ if __name__ == "__main__":
     # package_init("uta-racecar started")
     rospy.init_node("uta_racecar")
 
+    # BaseImageManager()
+    # c = Capture()
+    # c.register_callbacks_for_saving_data()
     driver = AutoDriver(use_left_camera = True)
     driver.drive_autonomous()
     # driver.drive_and_save_data()
@@ -45,7 +47,7 @@ if __name__ == "__main__":
     # drive = Drive() 
     # drive.initiate_threads()
     # drive.go_back(5)
-    # drive.go_left()
+    # drive.go_left()~
     # drive.go_left_circle()
     # drive.destroy_threads()
     # rospy.signal_shutdown("shutdown")

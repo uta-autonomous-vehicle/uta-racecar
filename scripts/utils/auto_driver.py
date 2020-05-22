@@ -21,6 +21,8 @@ from capture_vision_steering import Capture
 from capture_vision_usb import CaptureSecondaryView
 from path_sense.utils.cv_tools import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
+from uta_racecar.srv import ProcessUsbImageMessage, ProcessUsbImageMessageResponse
+from base_image_manager import BaseImageManager
 
 
 # now = datetime.strftime(datetime.now(), "uta_racecar_%Y-%m-%d-%H:%M:%s")
@@ -68,29 +70,31 @@ class AutoDriver(AutoDriverManager):
         self.seconday_view = CaptureSecondaryView()
         self.capture = Capture()
         self.save_data = False
-    
 
     def callback_for_autonomy(self, data):
-        # self.callback_for_halting_activity(data)
-
         self.increment_seq_for_autonomy()
         seq = self.get_seq_for_autonomy()
         logger.info("recieved image for autonomy activity at %s", seq)
 
         image = Im.frombytes("RGB", (IMAGE_WIDTH, IMAGE_HEIGHT), data.data)
-        image = np.array(image)
+        # image_height = rospy.get_param("/usb_cam/image_height")
+        # image_width = rospy.get_param("/usb_cam/image_width")
 
-        true_offset = 150
+        # image = self.capture.read_image(data.data, 'RGB', (IMAGE_WIDTH, IMAGE_HEIGHT))
+        image_array = np.array(image)
+
+        true_offset = 200
         center_offset = true_offset
         if self.use_left_camera:
-            center_offset = - true_offset
+            center_offset = -1 * true_offset
         
-        offset_detector = StraightLineOffsetDetector(image)
+        offset_detector = StraightLineOffsetDetector(image_array)
         offset_detector.filter_color()
         steering_angle = offset_detector.get_steering_angle(center_offset)
         logger.info("steering angle %s", steering_angle)
 
         if -0.34 < steering_angle and steering_angle < 0.34:
+            logger.info("path detected. to steer in %s angle", steering_angle)
             self.drive.safety_must_stop_for_blocking_object = False
             # NOTE: TO PREVENT UNDER STEERING
             if math.fabs(steering_angle) <= 0.1:
@@ -100,25 +104,21 @@ class AutoDriver(AutoDriverManager):
 
             self.drive.make_turn(steering_angle)
             
-            if self.save_data:
-                image = self.capture.read_image(data.data)
-                image = np.array(image)
-
-                steering_angle_text = "Angle: {}".format(steering_angle)
-                image_tool = CVTools(image)
-                image_tool.add_text_to_image(steering_angle_text, (100, 100))
-                image = image_tool.image
-                if self.use_left_camera:
-                    # self.capture.left_camera_video.write(image)
-                    self.capture.save_file(Im.fromarray(image), self.capture.file_path + "/left_camera/{}.jpg".format(self.get_seq_for_autonomy()))
-                else:
-                    # self.capture.right_camera_video.write(image)
-                    self.capture.save_file(Im.fromarray(image), self.capture.file_path + "/right_camera/{}.jpg".format(self.get_seq_for_autonomy()))
-
-                self.capture.file_to_write_autonomous.write("{} {}\n".format(self.get_seq_for_autonomy(), steering_angle))
         elif steering_angle == -1:
             pass
             self.drive.safety_must_stop_for_blocking_object = True
+        
+        if self.save_data:
+            # image = self.capture.read_image(data.data, "RAW")
+            # image = np.array(image)
+
+            steering_angle_text = "Angle: {}".format(steering_angle)
+            # image_tool = CVTools(image)
+            # image_tool.add_text_to_image(steering_angle_text, (100, 100))
+            # image = image_tool.image
+
+            image_path = os.path.join(BaseImageManager.AUTONOMOUS_DIR, "{}.jpg".format(self.get_seq_for_autonomy()))
+            self.capture.save_file(image, image_path)
     
     def take_input(self):
         while True:
@@ -139,10 +139,15 @@ class AutoDriver(AutoDriverManager):
         last_stopped_at = self.get_last_stopped_at()
         
         logger.info("recieved image for halting activity at %s", seq)
-        image = Im.frombytes("RGB", (IMAGE_WIDTH, IMAGE_HEIGHT), data.data)
-        image = np.array(image)
 
-        stopping_mark_detector = StraightLineOffsetDetector(image)
+        image = Im.frombytes("RGB", (IMAGE_WIDTH, IMAGE_HEIGHT), data.data)
+        # image_height = rospy.get_param("/usb_cam/image_height")
+        # image_width = rospy.get_param("/usb_cam/image_width")
+        
+        # image = self.capture.read_image(data.data, 'RGB', (IMAGE_WIDTH, IMAGE_HEIGHT))
+        image_array = np.array(image)
+
+        stopping_mark_detector = StraightLineOffsetDetector(image_array)
         stopping_mark_detector.filter_color("pink")
         steering_angle_stop = stopping_mark_detector.get_steering_angle(100)
 
@@ -158,9 +163,16 @@ class AutoDriver(AutoDriverManager):
                 logger.info("detected stopping mark at %s", seq)
                 self.set_last_stopped_at(seq)
                 self.drive.set_driving_around_object_or_halt()
-                # time.sleep(.5)
-
+                
+                time.sleep(.5)
                 self.drive.halt(2)
+                
+                # s = rospy.ServiceProxy("uta_racecar/is_printer_active", ProcessUsbImageMessage)
+                # if s(1).result:
+                #     pass
+                # else:
+                #     rospy.signal_shutdown("Stopping manually")
+
                 # self.take_input()
                 CaptureSecondaryView().record_short_video()
                 # self.drive.go_sright_circle()
@@ -182,8 +194,11 @@ class AutoDriver(AutoDriverManager):
         else:
             node_to_listen = '/zed/right/image_rect_color'
         
+        # node_to_listen = '/zed/left/image_rect_color'
         rospy.Subscriber(node_to_listen, Image, self.callback_for_halting_activity)
         rospy.Subscriber(node_to_listen, Image, self.callback_for_autonomy)
+
+        # self.cv_publisher = rospy.Publisher('/uta_racecar/autonomous_vision', Image, 10)
         rospy.on_shutdown(self.disable_drive)
         
         self.drive.initiate_threads()
@@ -192,7 +207,7 @@ class AutoDriver(AutoDriverManager):
     def drive_and_save_data(self):
         self.register_callback_for_autonomy()
         self.save_data = True
-        self.capture.register_callbacks_for_saving_data()
+        # self.capture.register_callbacks_for_saving_data()
         # self.drive.current_speed = 0.5
         # self.capture.initiate_setup_to_record_vision()
         return
