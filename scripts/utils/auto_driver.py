@@ -7,6 +7,7 @@ import cv2
 from PIL import Image as Im
 from sensor_msgs.msg import Joy, Image
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
+import std_msgs.msg as std_msgs
 from datetime import datetime
 import numpy as np
 import cv2 as cv
@@ -71,7 +72,7 @@ class AutoDriver(AutoDriverManager):
         self.capture = Capture()
         self.save_data = False
 
-    def callback_for_autonomy(self, data):
+    def callback_for_autonomy(self, data):    
         self.increment_seq_for_autonomy()
         seq = self.get_seq_for_autonomy()
         logger.info("recieved image for autonomy activity at %s", seq)
@@ -95,7 +96,7 @@ class AutoDriver(AutoDriverManager):
 
         if -0.34 < steering_angle and steering_angle < 0.34:
             logger.info("path detected. to steer in %s angle", steering_angle)
-            self.drive.safety_must_stop_for_blocking_object = False
+            self.drive.safety_must_stop_for_no_path = False
             # NOTE: TO PREVENT UNDER STEERING
             if math.fabs(steering_angle) <= 0.1:
                 self.drive.current_speed = self.drive.max_speed
@@ -105,8 +106,8 @@ class AutoDriver(AutoDriverManager):
             self.drive.make_turn(steering_angle)
             
         elif steering_angle == -1:
-            pass
-            self.drive.safety_must_stop_for_blocking_object = True
+            # pass
+            self.drive.safety_must_stop_for_no_path = True
         
         if self.save_data:
             # image = self.capture.read_image(data.data, "RAW")
@@ -182,6 +183,10 @@ class AutoDriver(AutoDriverManager):
                 # Thread(target=self.drive.halt, args=(5,0.5)).start()
                 AutoDriver.TRACKER[AutoDriver.HALTING_MARK] = 0
 
+    def callback_for_safety(self, data):
+        logger.info("received callback_for_safety: %s", data.data)
+        self.drive.safety_must_stop_for_blocking_object = not data.data
+
     def disable_drive(self):
         self.drive.destroy_threads()
 
@@ -197,6 +202,8 @@ class AutoDriver(AutoDriverManager):
         # node_to_listen = '/zed/left/image_rect_color'
         rospy.Subscriber(node_to_listen, Image, self.callback_for_halting_activity)
         rospy.Subscriber(node_to_listen, Image, self.callback_for_autonomy)
+        rospy.Subscriber("/safety_node/safety", std_msgs.Bool, self.callback_for_safety)
+        
 
         # self.cv_publisher = rospy.Publisher('/uta_racecar/autonomous_vision', Image, 10)
         rospy.on_shutdown(self.disable_drive)
