@@ -3,6 +3,7 @@
   <node pkg="uta_racecar" type="uta-racecar.py" name="uta_racecar">
     <param name="ZED_IMAGE_WIDTH" type="int" value="1280"/>
     <param name="ZED_IMAGE_HEIGHT" type="int" value="720"/>
+    <param name="use_sim_time" value="true"/>
   </node>
   <!-- <node pkg="uta_racecar" type="process_usb_capture.py" name="process_usb_capture">
     <param name="ZED_IMAGE_WIDTH" type="int" value="1280"/>

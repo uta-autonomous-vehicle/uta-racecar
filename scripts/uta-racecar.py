@@ -6,7 +6,7 @@ from sensor_msgs.msg import Joy
 from std_msgs.msg import Header
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 
-from utils import Capture, AutoDriver, BaseImageManager
+from utils import Capture, AutoDriver, BaseImageManager, ZedUtils
 from drive import Drive, DriveTest
 import actionlib    
 
@@ -33,8 +33,10 @@ if __name__ == "__main__":
     # BaseImageManager()
     # c = Capture()
     # c.register_callbacks_for_saving_data()
-    driver = AutoDriver(use_left_camera = True)
-    driver.drive_autonomous()
+    # driver = AutoDriver(use_left_camera = True)
+    # driver.drive_autonomous()
+
+    ZedUtils()
     # driver.drive_and_save_data()
     
     # driver.initiate_setup_to_record_vision()
