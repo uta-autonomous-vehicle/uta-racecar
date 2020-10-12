@@ -31,10 +31,12 @@ if __name__ == "__main__":
     rospy.init_node("uta_racecar")
 
     # BaseImageManager()
-    # c = Capture()
-    # c.register_callbacks_for_saving_data()
-    driver = AutoDriver(use_left_camera = True)
-    driver.drive_autonomous()
+    c = Capture()
+    c.register_callbacks_for_saving_data()
+    
+    
+    # driver = AutoDriver(use_left_camera = True)
+    # driver.drive_autonomous()
     # driver.drive_and_save_data()
     
     # driver.initiate_setup_to_record_vision()

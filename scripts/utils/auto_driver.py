@@ -22,7 +22,7 @@ from capture_vision_steering import Capture
 from capture_vision_usb import CaptureSecondaryView
 from path_sense.utils.cv_tools import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
-from uta_racecar.srv import ProcessUsbImageMessage, ProcessUsbImageMessageResponse
+# from uta_racecar.srv import ProcessUsbImageMessage, ProcessUsbImageMessageResponse
 from base_image_manager import BaseImageManager
 
 
