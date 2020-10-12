@@ -1,0 +1,5 @@
+<!-- -*- mode: XML -*- -->
+<launch>
+  <node pkg="uta_racecar" type="bag_util.py" name="bag_util">
+  </node>
+</launch>

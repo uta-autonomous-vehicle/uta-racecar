@@ -10,6 +10,7 @@ from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 from datetime import datetime
 import numpy as np
 import cv2 as cv
+import csv
 
 import message_filters
 import pdb
@@ -60,6 +61,7 @@ class BaseImageManager(object):
         right_camera_txt = os.path.join(BaseImageManager.FILE_PATH, "right_camera.txt")
         usb_camera_txt = os.path.join(BaseImageManager.FILE_PATH, "usb_camera.txt")
         drive_autonomous_txt = os.path.join(BaseImageManager.FILE_PATH, "drive_autonomous.txt")
+        pc_text = os.path.join(BaseImageManager.FILE_PATH, "pc.txt")
 
         open(left_camera_txt, "w").close()
         open(right_camera_txt, "w").close()
@@ -70,6 +72,9 @@ class BaseImageManager(object):
         BaseImageManager.RIGHT_CAMERA_TXT = open(right_camera_txt, 'a')
         BaseImageManager.USB_CAMERA_TXT = open(usb_camera_txt, 'a')
         BaseImageManager.AUTONOMOUS_TXT = open(drive_autonomous_txt, 'a')
+        BaseImageManager.PCT_TEXT = open(pc_text, 'a')
+
+        BaseImageManager.PC_WRITER = csv.writer(BaseImageManager.PCT_TEXT, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
     
     def initiate_setup_to_record_vision(self):
         if BaseImageManager.FILE_PATH:

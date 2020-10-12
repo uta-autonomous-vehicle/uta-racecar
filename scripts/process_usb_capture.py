@@ -12,21 +12,6 @@ from uta_racecar.srv import ProcessUsbImageMessage, ProcessUsbImageMessageRespon
 
 import actionlib    
 
-# print "............"
-def joy_callback(msg):
-    # TODO: subscribed to /joy
-    pass
-
-# change_time = rospy.Time.now()
-def get_time_passed(started = None):
-    if not started:
-        return 0
-    
-    return time.time() - started
-
-def package_init(message = ""):
-    print message
-
 def is_printer_active(req):
     result = int(raw_input("Should continue?:   ")) == 1
     return ProcessUsbImageMessageResponse(result)
