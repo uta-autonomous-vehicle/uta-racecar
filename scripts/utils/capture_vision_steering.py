@@ -60,31 +60,30 @@ class Capture(BaseCapture, BaseImageManager):
     
     def scan_input(self, data):
         scanner = np.asarray(data.ranges)
-        scanner.tofile(os.path.join(BaseImageManager.SCAN_DIR, str(data.header.stamp)))
+        scanner.tofile(os.path.join(BaseImageManager.SCAN_DIR, str(self.seq)))
 
     def depth_camera_input(self, data):
         if data.data:
             image = self.read_image(data.data, "RGBA", (data.width, data.height))
+            image.show()
+            
             image = np.asarray(image)
 
-            bridge = CvBridge()
-            cv_image = bridge.imgmsg_to_cv2(data, desired_encoding='passthrough')
+            # not usable output by reading it from cvbridge
+            # bridge = CvBridge()
+            # cv_image = bridge.imgmsg_to_cv2(data, desired_encoding='passthrough')
+            # self.save_file(cv_image, os.path.join(BaseImageManager.DEPTH_DIR, "cv_{}.jpg".format(self.seq)))
 
             logger.info("saving frame {}".format(self.depth_image_seq))
+            self.save_file(image, os.path.join(BaseImageManager.DEPTH_DIR, "{}.jpg".format(self.seq)))
+            self.save_file(image[:,:,3], os.path.join(BaseImageManager.DEPTH_DIR, "depth_{}.jpg".format(self.seq)))
 
-            self.save_file(image, os.path.join(BaseImageManager.LEFT_CAMERA_DIR, "{}.jpg".format(self.depth_image_seq)))
-            self.save_file(image, os.path.join(BaseImageManager.LEFT_CAMERA_DIR, "cv_{}.jpg".format(self.depth_image_seq)))
-
-            self.depth_image_seq += 1
-        
         return None    
     
     def camera_input(self, data, steering_angle = None, file_to_write = None):
-        image1 = ros_numpy.numpify(data)
-        image1.tofile(os.path.join(BaseImageManager.LEFT_CAMERA_DIR, str(data.header.stamp)))
-
+        
         if data.data:
-            image = self.read_image(data.data, "RGB")
+            image = self.read_image(data.data, "RGB", (data.width, data.height))
 
             if steering_angle:
                 image_tool = CVTools(np.asarray(image))
@@ -93,14 +92,12 @@ class Capture(BaseCapture, BaseImageManager):
 
                 image = Im.fromarray(image_tool.image)
 
-            image_path = os.path.join(BaseImageManager.LEFT_CAMERA_DIR, "{}.jpg".format(self.left_seq))
+            image_path = os.path.join(BaseImageManager.LEFT_CAMERA_DIR, "{}.jpg".format(self.seq))
             self.save_file(image, image_path)
 
-        if file_to_write:
-            file_to_write.write("{}.jpg ".format(self.left_seq))
+        image1 = ros_numpy.numpify(data)
+        image1.tofile(os.path.join(BaseImageManager.LEFT_CAMERA_DIR, str(data.header.stamp)))
 
-        self.left_seq += 1
-        
         return None
     
     def point_cloud_input(self, data):
@@ -110,7 +107,7 @@ class Capture(BaseCapture, BaseImageManager):
         # points = ros_numpy.point_cloud2.pointcloud2_to_xyz_array(data)
         points = ros_numpy.numpify(data)
 
-        file_path = os.path.join(BaseImageManager.PC_DIR, str(data.header.stamp))
+        file_path = os.path.join(BaseImageManager.PC_DIR, str(self.seq))
         points.tofile(file_path)
     
     def steering_output(self, steering):
@@ -131,28 +128,29 @@ class Capture(BaseCapture, BaseImageManager):
                 file_to_write.close()
 
     def sync_camera_steering(self, rect_color, point_cloud, depth_image, laser_scan):
+        print "*"*10
+        print "Receiving synced input ", self.seq
+
         self.camera_input(rect_color)
         self.point_cloud_input(point_cloud)
         self.depth_camera_input(depth_image)
         self.scan_input(laser_scan)
 
-        print "*"*10
-        print "receiving synced input" 
-        print "info data ({0}, {1})".format(camera_left.width, camera_left.height)
-
-        steering_angle = steering.drive.steering_angle if steering else 0.0
-
-        self.camera_input(camera_left, steering_angle, BaseImageManager.LEFT_CAMERA_TXT)
-        self.right_camera_input(camera_right, steering_angle, BaseImageManager.RIGHT_CAMERA_TXT)
-
-        if steering:
-            self.ackermann_input(steering, BaseImageManager.LEFT_CAMERA_TXT)
-            self.ackermann_input(steering, BaseImageManager.RIGHT_CAMERA_TXT)
-            # self.point_cloud_input(point_cloud)
-
         self.seq += 1
 
-        print "main seq {}".format(self.seq)
+        # steering_angle = steering.drive.steering_angle if steering else 0.0
+
+        # self.camera_input(camera_left, steering_angle, BaseImageManager.LEFT_CAMERA_TXT)
+        # self.right_camera_input(camera_right, steering_angle, BaseImageManager.RIGHT_CAMERA_TXT)
+
+        # if steering:
+        #     self.ackermann_input(steering, BaseImageManager.LEFT_CAMERA_TXT)
+        #     self.ackermann_input(steering, BaseImageManager.RIGHT_CAMERA_TXT)
+        #     # self.point_cloud_input(point_cloud)
+
+        # self.seq += 1
+
+        # print "main seq {}".format(self.seq)
     
     def shutdown_logged_files(self):
         print "Node shutting down, saving data to {}".format(BaseImageManager.FILE_PATH)
@@ -166,10 +164,10 @@ class Capture(BaseCapture, BaseImageManager):
         # camera_sub_right = message_filters.Subscriber("/zed/right/image_rect_color", Image)
         angle_sub = message_filters.Subscriber("/vesc/low_level/ackermann_cmd_mux/output", AckermannDriveStamped)
         
-        point_cloud = messagse_filters.Subscriber("/zed/point_cloud/cloud_registered", PointCloud2)
+        point_cloud = message_filters.Subscriber("/zed/point_cloud/cloud_registered", PointCloud2)
         # rospy.Subscriber("/zed/point_cloud/cloud_registered", PointCloud2, self.point_cloud_input)
 
-        rect_color = message_filters.Subscriber("zed/rgb/image_rect_color", Image)
+        rect_color = message_filters.Subscriber("/zed/rgb/image_rect_color", Image)
         # rospy.Subscriber("/zed/rgb/image_rect_color", Image, self.camera_input)
 
         depth_image = message_filters.Subscriber("/zed/depth/depth_registered", Image)
