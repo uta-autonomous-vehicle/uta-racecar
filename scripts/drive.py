@@ -20,9 +20,6 @@ from multiprocessing import Value, Process
 from path_sense.utils import CVTools, StraightLineOffsetDetector
 from path_sense.utils.logger import logger
 
-IMAGE_HEIGHT = rospy.get_param("/uta_racecar/ZED_IMAGE_HEIGHT")
-IMAGE_HEIGHT = rospy.get_param("/uta_racecar/ZED_IMAGE_WIDTH")
-
 class DriveManager(object):
     def __init__(self):
         self.safety_stop_force = False
@@ -82,7 +79,7 @@ class Drive(DriveManager):
             'steering_angle_velocity': 0.0,
         }
 
-        self.ack_publisher = rospy.Publisher("/ackermann_cmd_mux/input/navigation", AckermannDriveStamped, queue_size=5)
+        self.ack_publisher = rospy.Publisher("/vesc/low_level/ackermann_cmd_mux/input/teleop", AckermannDriveStamped, queue_size=5)
         self.thread_state = {}
         
         # self.current_steering_thread = Value('d', 0.0)
@@ -219,7 +216,23 @@ class DriveTest(Drive):
     def test_steering(self):
         rate = rospy.Rate(10)
         self.current_speed = 0.0
-        for i in np.linspace(-0.34, 0.34, num = 100):
-            for _ in range(1000):
+        for i in range(100):
+            for i in np.linspace(0.34, -0.34, num = 30):
+                print(i)
                 self.make_turn(i)
-            rate.sleep()
+                rate.sleep()
+            for i in np.linspace(-0.34, 0.34, num = 30):
+                print(i)
+                self.make_turn(i)
+                rate.sleep()
+
+
+if __name__ == "__main__":
+    rospy.init_node("uta_racecar")
+
+    drive_test = DriveTest()
+    drive_test.initiate_threads()
+
+    drive_test.test_steering()
+    rospy.signal_shutdown("shutdown")
+    

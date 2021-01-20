@@ -204,7 +204,6 @@ class AutoDriver(AutoDriverManager):
         rospy.Subscriber(node_to_listen, Image, self.callback_for_autonomy)
         rospy.Subscriber("/safety_node/safety", std_msgs.Bool, self.callback_for_safety)
         
-
         # self.cv_publisher = rospy.Publisher('/uta_racecar/autonomous_vision', Image, 10)
         rospy.on_shutdown(self.disable_drive)
         

@@ -47,17 +47,19 @@ class BaseImageManager(object):
     def create_dir_for_images(self):
 
         BaseImageManager.LEFT_CAMERA_DIR = os.path.join(BaseImageManager.FILE_PATH, "left_camera")
-        BaseImageManager.RIGHT_CAMERA_DIR = os.path.join(BaseImageManager.FILE_PATH, "right_camera")
+        # BaseImageManager.RIGHT_CAMERA_DIR = os.path.join(BaseImageManager.FILE_PATH, "right_camera")
         BaseImageManager.AUTONOMOUS_DIR = os.path.join(BaseImageManager.FILE_PATH, "autonomous_camera")
         BaseImageManager.USB_CAMERA_DIR = os.path.join(BaseImageManager.FILE_PATH, "usb_camera")
         BaseImageManager.PC_DIR = os.path.join(BaseImageManager.FILE_PATH, "pc")
+        BaseImageManager.DEPTH_DIR = os.path.join(BaseImageManager.FILE_PATH, "depth")
         BaseImageManager.SCAN_DIR = os.path.join(BaseImageManager.FILE_PATH, "scan")
 
         os.mkdir(BaseImageManager.LEFT_CAMERA_DIR)
-        os.mkdir(BaseImageManager.RIGHT_CAMERA_DIR)
+        # os.mkdir(BaseImageManager.RIGHT_CAMERA_DIR)
         os.mkdir(BaseImageManager.AUTONOMOUS_DIR)
         os.mkdir(BaseImageManager.USB_CAMERA_DIR)
         os.mkdir(BaseImageManager.PC_DIR)
+        os.mkdir(BaseImageManager.DEPTH_DIR)
         os.mkdir(BaseImageManager.SCAN_DIR)
     
     def create_log_files_for_images(self):
