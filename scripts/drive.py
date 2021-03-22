@@ -1,10 +1,19 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Mar 22 12:36:23 2021
+
+Modified by Travis Major travis.major@mavs.uta.edu to incorporate obtaining 
+Z-height from Octoprint 3D-printer for trailer camera system.
+"""
 
 import math
 import rospy
 import time
 import datetime
 
+import paramiko
+from getz import GetZ
 import cv2 as cv
 
 from sensor_msgs.msg import Joy
@@ -195,19 +204,29 @@ class Drive(DriveManager):
         # TODO: add a way to make a 90 turn and straighten up
         for _ in range(4):
             self.go_left()
-
+##############################################################################
     def halt(self, secs = 0.0, with_delay = 0.0):
         start = datetime.datetime.now()
         # while (datetime.datetime.now() - start).seconds <= with_delay:
         #     continue
-
+        z = GetZ()
+        bed_height = z.ssh_get_z()
+        if bed_height != None:
+            f = open("~/z.txt", "a")
+            f.write(str(bed_height))
+            f.close()
+            print(bed_height)
+            
         while (datetime.datetime.now() - start).seconds <= secs:
             self.current_speed = 0.0
             
         # self.reset_driving_around_object_or_halt()
-
+##############################################################################
     def release_halt(self, speed = None):
         self.current_speed = speed or self.max_speed
+        
+    def get_z( ):
+        
 
 class DriveTest(Drive):
     def __init__(self):
