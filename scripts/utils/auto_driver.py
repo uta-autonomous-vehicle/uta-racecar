@@ -80,7 +80,7 @@ class AutoDriver(AutoDriverManager):
         image = Im.frombytes("RGB", (IMAGE_WIDTH, IMAGE_HEIGHT), data.data)
         image = np.array(image)
 
-        true_offset = 150
+        true_offset = -250
         center_offset = true_offset
         if self.use_left_camera:
             center_offset = - true_offset
@@ -160,9 +160,9 @@ class AutoDriver(AutoDriverManager):
                 self.drive.set_driving_around_object_or_halt()
                 # time.sleep(.5)
 
-                self.drive.halt(2)
+                self.drive.halt(1)
                 # self.take_input()
-                CaptureSecondaryView().record_short_video()
+                # CaptureSecondaryView().record_short_video()
                 # self.drive.go_sright_circle()
 
                 self.drive.current_speed = self.drive.max_speed

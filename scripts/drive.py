@@ -78,7 +78,7 @@ class Drive(DriveManager):
             'steering_angle_velocity': 0.0,
         }
 
-        self.ack_publisher = rospy.Publisher("/ackermann_cmd_mux/input/navigation", AckermannDriveStamped, queue_size=5)
+        self.ack_publisher = rospy.Publisher("/vesc/low_level/ackermann_cmd_mux/input/teleop", AckermannDriveStamped, queue_size=5)
         self.thread_state = {}
         
         # self.current_steering_thread = Value('d', 0.0)
